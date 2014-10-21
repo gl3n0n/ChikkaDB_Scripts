@@ -1,0 +1,182 @@
+SERVER: DB-REPLICA (archive_powerapp_flu)
+
+
+select concat('insert ignore into tmp_pasaload_mins select phone, ''BUDDY'', last_updated from promo_subs where phone regexp ''', pattern, ''';') from mobile_pattern where operator ='SMART' and sim_type='BUDDY';
+select concat('insert ignore into tmp_pasaload_mins select phone, ''TNT'', last_updated from promo_subs where phone regexp ''', pattern, ''';') from mobile_pattern where operator ='SMART' and sim_type='TNT';
+
+select concat('insert ignore into tmp_eload_mins select phone, ''BUDDY'', last_updated_eload, 0 from promo_subs where phone regexp ''', pattern, ''';') from mobile_pattern where operator ='SMART' and sim_type='BUDDY' union
+select concat('insert ignore into tmp_eload_mins select phone, ''TNT'', last_updated_eload, 0 from promo_subs where phone regexp ''', pattern, ''';') from mobile_pattern where operator ='SMART' and sim_type='TNT';
+
+d!pw3dEMDSc.45p
+Bong - 639474296630
+Rica - 639399369648
+Victor-639188039134
+       639188882728
+       639188088585
+Jefte- 639189087704
+
+set session tmp_table_size = 268435456;
+set session max_heap_table_size = 268435456;
+set session sort_buffer_size = 104857600;
+set session read_buffer_size = 8388608;
+
+SU
+delete from tmp_bcast_mins where phone like '63947337%';
+delete from tmp_bcast_mins where phone like '63919220%';
+delete from tmp_bcast_mins where phone like '63918337%'; 
+Plus this MIN: 639493638683 
+delete from tmp_bcast_mins where phone = '639493638683';
+
+truncate table tmp_plan_users;
+insert into tmp_plan_users select a.phone, a.brand, 'POWERAPP', '2014-10-21', 'powerapp' from powerapp_users_apn a, tmp_chikka_apn b 
+where a.phone = b.phone
+and   not exists (select 1 from tmp_plan_users_1018 c where c.phone = a.phone and c.source='powerapp') 
+and   not exists (select 1 from tmp_plan_users_1019 c where c.phone = a.phone and c.source='powerapp') 
+and   not exists (select 1 from tmp_plan_users_1020 c where c.phone = a.phone and c.source='powerapp') 
+order by datein desc limit 500000;
+
+insert into tmp_plan_users select phone, brand, 'SPEEDBOOST', '2014-10-21', source from tmp_bcast_mins a 
+where brand='TNT' and bcasted=0
+and   not exists (select 1 from tmp_plan_users b where b.phone = a.phone and source='powerapp') 
+and   not exists (select 1 from tmp_plan_users_1018 b where b.phone = a.phone) 
+and   not exists (select 1 from tmp_plan_users_1019 b where b.phone = a.phone) 
+order by datein desc limit 1250000;
+
+insert into tmp_plan_users select phone, brand, 'ALLDAY', '2014-10-21', source from tmp_bcast_mins a 
+where brand='BUDDY' and bcasted=0
+and   not exists (select 1 from tmp_plan_users b where b.phone = a.phone and source='powerapp') 
+and   not exists (select 1 from tmp_plan_users_1018 b where b.phone = a.phone) 
+and   not exists (select 1 from tmp_plan_users_1019 b where b.phone = a.phone) 
+and   not exists (select 1 from tmp_plan_users_1020 b where b.phone = a.phone) 
+order by datein desc limit 1250000;
+
+
+create table tmp_plan_users_1021_sun like tmp_plan_users_1010_sun;
+insert into tmp_plan_users_1021_sun select phone, '', 'POWERAPP', '2014-10-21', 'SUN' from tmp_bcast_sun_mins a 
+where not exists (select 1 from tmp_plan_users_1018_sun b where b.phone = a.phone) 
+and   not exists (select 1 from tmp_plan_users_1019_sun b where b.phone = a.phone) 
+and   not exists (select 1 from tmp_plan_users_1020_sun b where b.phone = a.phone) 
+order by datein desc limit 500000;
+
+create table tmp_plan_users_1021 like tmp_plan_users;
+insert into tmp_plan_users_1021 select * from tmp_plan_users;
+select bcast_dt, plan, brand, source, countmp_plan_users_102t(1) from tmp_plan_users_1021 group by 1,2,3,4;
+
+select bcast_dt, plan, brand, count(1) from tmp_plan_users group by 1,2,3;
+select phone into outfile '/tmp/TNT_20141021.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'TNT' and plan = 'SPEEDBOOST';
+select phone into outfile '/tmp/BUDDY_20141021.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'BUDDY' and plan = 'ALLDAY';
+select phone into outfile '/tmp/ANDROID_20141021.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'POWERAPP';
+select phone into outfile '/tmp/SUN_20141021.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_1020_sun;
+
+
+scp noc@172.17.250.40:/tmp/*20141024.csv /tmp/.
+scp /tmp/*20141024.csv noc@172.17.250.158:/tmp/.
+ssh noc@172.17.250.158
+
+vi /tmp/*20141026.csv
+639474296630
+639399369648
+639188039134
+639188882728
+639188088585
+639189087704
+wc -l /tmp/*20141026.csv 
+sort /tmp/*20141026.csv | uniq | wc -l
+cd /var/www/html/scripts/5555-powerapp/bcast/
+mv /tmp/*20141026.csv .
+
+
+SUN Broadcast
+
+create table tmp_plan_users_1018_sun like tmp_plan_users_1010_sun;
+insert into tmp_plan_users_1018_sun select phone, '', 'POWERAPP', '2014-10-18', 'SUN' from tmp_bcast_sun_mins a 
+order by datein desc limit 500000;
+
+select phone into outfile '/tmp/SUN_20141018.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_1018_sun;
+
+scp noc@172.17.250.40:/tmp/SUN_20141022.csv /tmp/.
+scp /tmp/SUN_20141023.csv noc@172.17.250.176:/tmp/.
+ssh noc@172.17.250.176
+cd /var/www/html/scripts/5555-powerapp/bcast
+mv /tmp/SUN_20141023.csv .
+
+
+
+
+
+PISONET
+
+create temporary table tmp_pisonet_buys (phone varchar(12) not null, primary key (phone));
+insert into tmp_pisonet_buys select phone from powerapp_flu.powerapp_log where datein >= '2014-09-01' group by phone;
+
+insert into tmp_plan_users select phone, brand, 'PISONET', '2014-09-13', 'powerapp' from powerapp_inactive_list a 
+where brand='TNT'
+and not exists (select 1 from tmp_plan_users b where a.phone = b.phone) 
+;
+select phone into outfile '/tmp/TNT_INACTIVE_20140913.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'TNT' and plan = 'PISONET';
+
+select phone into outfile '/tmp/PISO_TNT_20140905.csv' fields terminated by ',' lines terminated by '\n' from tmp_pisonet_mins a where brand = 'TNT' and bcasted=0 
+and not exists (select 1 from tmp_plan_users_0905 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_pisonet_buys b where a.phone = b.phone) 
+;
+select phone into outfile '/tmp/PISO_BUDDY_20140905.csv' fields terminated by ',' lines terminated by '\n' from tmp_pisonet_mins a where brand = 'BUDDY' and bcasted=0
+and not exists (select 1 from tmp_plan_users_0905 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_pisonet_buys b where a.phone = b.phone) 
+;
+scp noc@172.17.250.40:/tmp/PISO*20140905.csv /tmp/.
+scp /tmp/PISO*20140905.csv noc@172.17.250.158:/tmp/.
+ssh noc@172.17.250.158
+cd /var/www/html/scripts/5555-powerapp/bcast/
+vi /tmp/PISO*20140905.csv
+639474296630
+639399369648
+639188039134
+639188882728
+639188088585
+639189087704
+wc -l /tmp/PISO*20140905.csv
+sort /tmp/PISO*20140905.csv | uniq | wc -l
+mv /tmp/PISO*20140905.csv .
+
+
+select  phone into outfile '/tmp/POWERAP_MINs_2014_August.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-08-01' and datein < '2014-09-01' group by phone;
+
+
+create temporary table tmp_bestever select phone from pull_log where datein = '2014-08-12' and keyword = 'BESTEVER_END' group by phone;
+alter table tmp_bestever add primary key (phone);
+select left(timein,2) tm_hh, count(distinct phone) uniq from pull_log a where datein = '2014-08-12' and keyword <> 'BESTEVER_END' and exists (select 1 from tmp_bestever b where a.phone=b.phone) group by 1;
+select max(timein) max_timein, count(distinct phone) uniq from request_log a where datein = '2014-08-12' and exists (select 1 from tmp_bestever b where a.phone=b.phone);
+
+drop temporary table tmp_bestever_6k;
+create temporary table tmp_bestever_6k select phone, min(timein) min_time, max(timein) max_time from pull_log a where datein = '2014-08-12' and keyword <> 'BESTEVER_END' and exists (select 1 from tmp_bestever b where a.phone=b.phone) group by 1;
+alter table tmp_bestever_6k add primary key (phone);
+
+create temporary table tmp_bestever_6k_hh select phone, left(timein,2) tm_hh from pull_log a where datein = '2014-08-12' and keyword <> 'BESTEVER_END' and exists (select 1 from tmp_bestever b where a.phone=b.phone) group by 1,2;
+alter table tmp_bestever_6k_hh add primary key (phone,tm_hh);
+
+
+select left(timein,2) tm_hh, count(distinct phone) uniq, count(1) hits, min(timein), max(timein) 
+from pull_log a 
+where datein = '2014-08-12' and timein < '10:00:00' 
+and exists (select 1 from tmp_bestever_6k b where a.phone=b.phone) group by 1;
+
+select phone, datein into outfile '/tmp/Pisonet_Buys.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-08-27' and datein < '2014-09-01' order by phone, datein;
+
+
+
+
+create temporary table tmp_pisonet_bcasted (phone varchar(12) not null, primary key (phone));
+load data local infile '/tmp/PISO_BUDDY_20140905.csv' into table tmp_pisonet_bcasted;
+load data local infile '/tmp/PISO_TNT_20140905.csv' into table tmp_pisonet_bcasted;
+
+create temporary table tmp_pisonet_buys (phone varchar(12) not null, primary key (phone));
+insert into tmp_pisonet_buys select phone from powerapp_flu.powerapp_log where datein >= '2014-09-05 12:00:00' and plan='PISONET' group by phone;
+
+select count(1) from tmp_pisonet_buys a where exists (select 1 from tmp_pisonet_bcasted b where a.phone=b.phone);
+ 
+ 
+ 
+10.11.3.67
+367w-rdsalutan/ej
+pass=chikka123
+http://10.11.3.160:50030/jobtracker.jsp

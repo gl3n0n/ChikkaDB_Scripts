@@ -1,0 +1,477 @@
+
+create table powerapp_retention_stats_monthly (
+   tran_dt date not null,
+   w31_days  int default 0 not null,
+   w30_days  int default 0 not null,
+   w29_days  int default 0 not null,
+   w28_days  int default 0 not null,
+   w27_days  int default 0 not null,
+   w26_days  int default 0 not null,
+   w25_days  int default 0 not null,
+   w24_days  int default 0 not null,
+   w23_days  int default 0 not null,
+   w22_days  int default 0 not null,
+   w21_days  int default 0 not null,
+   w20_days  int default 0 not null,
+   w19_days  int default 0 not null,
+   w18_days  int default 0 not null,
+   w17_days  int default 0 not null,
+   w16_days  int default 0 not null,
+   w15_days  int default 0 not null,
+   w14_days  int default 0 not null,
+   w13_days  int default 0 not null,
+   w12_days  int default 0 not null,
+   w11_days  int default 0 not null,
+   w10_days  int default 0 not null,
+   w9_days   int default 0 not null,
+   w8_days   int default 0 not null,
+   w7_days   int default 0 not null,
+   w6_days   int default 0 not null,
+   w5_days   int default 0 not null,
+   w4_days   int default 0 not null,
+   w3_days   int default 0 not null,
+   w2_days   int default 0 not null,
+   w1_days   int default 0 not null,
+   new_users int default 0 not null,
+   wk_start  date not null,
+   primary key (tran_dt)
+);
+
+
+
+drop procedure if exists sp_generate_retention_stats_monthly;
+delimiter //
+create procedure sp_generate_retention_stats_monthly (p_trandate varchar(10))
+begin
+   declare vNoDay, vHits int default 0;
+   declare done_p int default 0;
+   declare c_pat cursor for 
+      select no_day, count(distinct phone) hits from (
+      select phone, count(1) no_day from (
+      select left(datein,10) datein, phone, count(1) hits from powerapp_log 
+      where datein < date_add(p_trandate, interval 1 day) and  datein >= date_sub(p_trandate, interval 31 day) 
+      group by left(datein,10), phone
+      union
+      select left(datein,10) datein, phone, count(1) hits from powerapp_flu.powerapp_log 
+      where datein < date_add(p_trandate, interval 1 day) and  datein >= date_sub(p_trandate, interval 31 day) 
+      group by left(datein,10), phone
+      ) t1 group by phone
+      ) t2
+      group by no_day order by no_day;
+   
+   declare continue handler for sqlstate '02000' set done_p = 1;
+
+   SET @Day_1 = 0;
+   SET @Day_2 = 0;
+   SET @Day_3 = 0;
+   SET @Day_4 = 0;
+   SET @Day_5 = 0;
+   SET @Day_6 = 0;
+   SET @Day_7 = 0;
+   SET @NewUsers = 0;
+
+   OPEN c_pat;
+   REPEAT
+   FETCH c_pat into vNoDay, vHits;
+      if not done_p then
+         if     vNoDay = 1 then  SET @Day_1  = vHits;
+         elseif vNoDay = 2 then  SET @Day_2  = vHits;
+         elseif vNoDay = 3 then  SET @Day_3  = vHits;
+         elseif vNoDay = 4 then  SET @Day_4  = vHits;
+         elseif vNoDay = 5 then  SET @Day_5  = vHits;
+         elseif vNoDay = 6 then  SET @Day_6  = vHits;
+         elseif vNoDay = 7 then  SET @Day_7  = vHits;
+         elseif vNoDay = 8 then  SET @Day_8  = vHits;
+         elseif vNoDay = 9 then  SET @Day_9  = vHits;
+         elseif vNoDay = 10 then SET @Day_10 = vHits;
+         elseif vNoDay = 11 then SET @Day_11 = vHits;
+         elseif vNoDay = 12 then SET @Day_12 = vHits;
+         elseif vNoDay = 13 then SET @Day_13 = vHits;
+         elseif vNoDay = 14 then SET @Day_14 = vHits;
+         elseif vNoDay = 15 then SET @Day_15 = vHits;
+         elseif vNoDay = 16 then SET @Day_16 = vHits;
+         elseif vNoDay = 17 then SET @Day_17 = vHits;
+         elseif vNoDay = 18 then SET @Day_18 = vHits;
+         elseif vNoDay = 19 then SET @Day_19 = vHits;
+         elseif vNoDay = 20 then SET @Day_20 = vHits;
+         elseif vNoDay = 21 then SET @Day_21 = vHits;
+         elseif vNoDay = 22 then SET @Day_22 = vHits;
+         elseif vNoDay = 23 then SET @Day_23 = vHits;
+         elseif vNoDay = 24 then SET @Day_24 = vHits;
+         elseif vNoDay = 25 then SET @Day_25 = vHits;
+         elseif vNoDay = 26 then SET @Day_26 = vHits;
+         elseif vNoDay = 27 then SET @Day_27 = vHits;
+         elseif vNoDay = 28 then SET @Day_28 = vHits;
+         elseif vNoDay = 29 then SET @Day_29 = vHits;
+         elseif vNoDay = 30 then SET @Day_30 = vHits;
+         elseif vNoDay = 31 then SET @Day_31 = vHits;
+         end if;
+      end if;
+   UNTIL done_p
+   END REPEAT;
+
+   -- count new users 
+   -- truncate table powerapp_last_week_users;
+   create table powerapp_last_week_users ( phone varchar(12) not null, primary key (phone) );
+
+   insert into powerapp_last_week_users 
+   select phone from (
+   select phone from powerapp_log
+   where  datein >= date_sub(p_trandate, interval 32 day) 
+   and    datein < p_trandate group by phone
+   union
+   select phone from powerapp_flu.powerapp_log
+   where  datein >= date_sub(p_trandate, interval 32 day) 
+   and    datein < p_trandate group by phone 
+   ) t group by phone;
+
+
+   select count(distinct phone) 
+   into   @NewUsers 
+   from (
+   select phone from powerapp_log a 
+   where  a.datein < date_add(p_trandate, interval 1 day)
+   and    a.datein >= p_trandate
+   and    not exists (
+   select 1 from powerapp_last_week_users b
+   where  a.phone = b.phone)
+   union
+   select phone from powerapp_flu.powerapp_log a 
+   where  a.datein < date_add(p_trandate, interval 1 day)
+   and    a.datein >= p_trandate
+   and    not exists (
+   select 1 from powerapp_last_week_users b
+   where  a.phone = b.phone)
+   ) t;
+    
+   drop table powerapp_last_week_users;
+   -- truncate table powerapp_last_week_users;
+   -- end count of new users
+
+   insert into powerapp_retention_stats_monthly values (p_trandate, @Day_31, @Day_30,
+    @Day_29, @Day_28, @Day_27, @Day_26, @Day_25, @Day_24, @Day_13, @Day_22, @Day_21, @Day_20, 
+    @Day_19, @Day_18, @Day_17, @Day_16, @Day_15, @Day_14, @Day_13, @Day_12, @Day_11, @Day_10,
+    @Day_9, @Day_8, @Day_7, @Day_6, @Day_5, @Day_4, @Day_3, @Day_2, @Day_1, 
+    @NewUsers, date_sub(p_trandate, interval 31 day) );
+
+end;
+//
+delimiter ;
+
+
+call sp_generate_retention_stats_monthly('2014-02-24');
+call sp_generate_retention_stats_monthly('2014-02-23');
+call sp_generate_retention_stats_monthly('2014-02-22');
+call sp_generate_retention_stats_monthly('2014-02-21');
+call sp_generate_retention_stats_monthly('2014-02-20');
+call sp_generate_retention_stats_monthly('2014-02-19');
+call sp_generate_retention_stats_monthly('2014-02-18');
+call sp_generate_retention_stats_monthly('2014-02-17');
+call sp_generate_retention_stats_monthly('2014-02-16');
+call sp_generate_retention_stats_monthly('2014-02-15');
+call sp_generate_retention_stats_monthly('2014-02-14');
+call sp_generate_retention_stats_monthly('2014-02-13');
+call sp_generate_retention_stats_monthly('2014-02-12');
+call sp_generate_retention_stats_monthly('2014-02-11');
+call sp_generate_retention_stats_monthly('2014-02-10');
+call sp_generate_retention_stats_monthly('2014-02-09');
+call sp_generate_retention_stats_monthly('2014-02-08');
+call sp_generate_retention_stats_monthly('2014-02-07');
+call sp_generate_retention_stats_monthly('2014-02-06');
+call sp_generate_retention_stats_monthly('2014-02-05');
+call sp_generate_retention_stats_monthly('2014-02-04');
+call sp_generate_retention_stats_monthly('2014-02-03');
+call sp_generate_retention_stats_monthly('2014-02-02');
+call sp_generate_retention_stats_monthly('2014-02-01');
+
+-- January
+call sp_generate_retention_stats_monthly('2014-01-31');
+call sp_generate_retention_stats_monthly('2014-01-30');
+call sp_generate_retention_stats_monthly('2014-01-29');
+call sp_generate_retention_stats_monthly('2014-01-28');
+call sp_generate_retention_stats_monthly('2014-01-27');
+call sp_generate_retention_stats_monthly('2014-01-26');
+call sp_generate_retention_stats_monthly('2014-01-25');
+call sp_generate_retention_stats_monthly('2014-01-24');
+call sp_generate_retention_stats_monthly('2014-01-23');
+call sp_generate_retention_stats_monthly('2014-01-22');
+call sp_generate_retention_stats_monthly('2014-01-21');
+call sp_generate_retention_stats_monthly('2014-01-20');
+call sp_generate_retention_stats_monthly('2014-01-19');
+call sp_generate_retention_stats_monthly('2014-01-18');
+call sp_generate_retention_stats_monthly('2014-01-17');
+call sp_generate_retention_stats_monthly('2014-01-16');
+call sp_generate_retention_stats_monthly('2014-01-15');
+call sp_generate_retention_stats_monthly('2014-01-14');
+call sp_generate_retention_stats_monthly('2014-01-13');
+call sp_generate_retention_stats_monthly('2014-01-12');
+call sp_generate_retention_stats_monthly('2014-01-11');
+call sp_generate_retention_stats_monthly('2014-01-10');
+call sp_generate_retention_stats_monthly('2014-01-09');
+call sp_generate_retention_stats_monthly('2014-01-08');
+call sp_generate_retention_stats_monthly('2014-01-07');
+call sp_generate_retention_stats_monthly('2014-01-06');
+call sp_generate_retention_stats_monthly('2014-01-05');
+call sp_generate_retention_stats_monthly('2014-01-04');
+call sp_generate_retention_stats_monthly('2014-01-03');
+call sp_generate_retention_stats_monthly('2014-01-02');
+call sp_generate_retention_stats_monthly('2014-01-01');
+-- December
+call sp_generate_retention_stats_monthly('2013-12-31');
+call sp_generate_retention_stats_monthly('2013-12-30');
+call sp_generate_retention_stats_monthly('2013-12-29');
+call sp_generate_retention_stats_monthly('2013-12-28');
+call sp_generate_retention_stats_monthly('2013-12-27');
+call sp_generate_retention_stats_monthly('2013-12-26');
+call sp_generate_retention_stats_monthly('2013-12-25');
+call sp_generate_retention_stats_monthly('2013-12-24');
+call sp_generate_retention_stats_monthly('2013-12-23');
+call sp_generate_retention_stats_monthly('2013-12-22');
+call sp_generate_retention_stats_monthly('2013-12-21');
+call sp_generate_retention_stats_monthly('2013-12-20');
+call sp_generate_retention_stats_monthly('2013-12-19');
+call sp_generate_retention_stats_monthly('2013-12-18');
+call sp_generate_retention_stats_monthly('2013-12-17');
+call sp_generate_retention_stats_monthly('2013-12-16');
+call sp_generate_retention_stats_monthly('2013-12-15');
+call sp_generate_retention_stats_monthly('2013-12-14');
+call sp_generate_retention_stats_monthly('2013-12-13');
+call sp_generate_retention_stats_monthly('2013-12-12');
+call sp_generate_retention_stats_monthly('2013-12-11');
+call sp_generate_retention_stats_monthly('2013-12-10');
+call sp_generate_retention_stats_monthly('2013-12-09');
+call sp_generate_retention_stats_monthly('2013-12-08');
+call sp_generate_retention_stats_monthly('2013-12-07');
+call sp_generate_retention_stats_monthly('2013-12-06');
+call sp_generate_retention_stats_monthly('2013-12-05');
+call sp_generate_retention_stats_monthly('2013-12-04');
+call sp_generate_retention_stats_monthly('2013-12-03');
+call sp_generate_retention_stats_monthly('2013-12-02');
+call sp_generate_retention_stats_monthly('2013-12-01');
+
+select * from powerapp_retention_stats_monthly order by tran_dt desc;
+
+
+=================================================================================================
+
+create table powerapp_retention_stats_plan (
+   tran_dt date not null,
+   plan varchar(16) not null,
+   w7_days  int default 0 not null,
+   w6_days  int default 0 not null,
+   w5_days  int default 0 not null,
+   w4_days  int default 0 not null,
+   w3_days  int default 0 not null,
+   w2_days  int default 0 not null,
+   w1_days  int default 0 not null,
+   new_users int default 0 not null,
+   wk_start date not null,
+   primary key (tran_dt, plan)
+);
+
+
+drop procedure if exists sp_generate_retention_stats_plan;
+delimiter //
+create procedure sp_generate_retention_stats_plan (p_plan varchar(16), p_trandate varchar(10))
+begin
+   declare vNoDay, vHits int default 0;
+   declare done_p int default 0;
+   declare c_pat cursor for 
+      select no_day, count(distinct phone) hits from (
+      select phone, count(1) no_day from (
+      select left(datein,10) datein, phone, count(1) hits from powerapp_log 
+      where datein < date_add(p_trandate, interval 1 day) and  datein >= date_sub(p_trandate, interval 7 day) 
+      and   plan = p_plan
+      group by left(datein,10), phone
+      union
+      select left(datein,10) datein, phone, count(1) hits from powerapp_flu.powerapp_log 
+      where datein < date_add(p_trandate, interval 1 day) and  datein >= date_sub(p_trandate, interval 7 day) 
+      and   plan = p_plan
+      group by left(datein,10), phone
+      ) t1 group by phone
+      ) t2
+      group by no_day order by no_day;
+   
+   declare continue handler for sqlstate '02000' set done_p = 1;
+
+   SET @Day_1 = 0;
+   SET @Day_2 = 0;
+   SET @Day_3 = 0;
+   SET @Day_4 = 0;
+   SET @Day_5 = 0;
+   SET @Day_6 = 0;
+   SET @Day_7 = 0;
+   SET @NewUsers = 0;
+
+   OPEN c_pat;
+   REPEAT
+   FETCH c_pat into vNoDay, vHits;
+      if not done_p then
+         if vNoDay = 1    then SET @Day_1 = vHits;
+         elseif vNoDay = 2 then SET @Day_2 = vHits;
+         elseif vNoDay = 3 then SET @Day_3 = vHits;
+         elseif vNoDay = 4 then SET @Day_4 = vHits;
+         elseif vNoDay = 5 then SET @Day_5 = vHits;
+         elseif vNoDay = 6 then SET @Day_6 = vHits;
+         elseif vNoDay = 7 then SET @Day_7 = vHits;
+         end if;
+      end if;
+   UNTIL done_p
+   END REPEAT;
+
+   -- count new users 
+   -- truncate table powerapp_last_week_users;
+   create table powerapp_last_week_users ( phone varchar(12) not null, primary key (phone) );
+
+   insert into powerapp_last_week_users 
+   select phone from (
+   select phone from powerapp_log
+   where  datein >= date_sub(p_trandate, interval 8 day) 
+   and    plan = p_plan
+   and    datein < p_trandate group by phone
+   union
+   select phone from powerapp_flu.powerapp_log
+   where  datein >= date_sub(p_trandate, interval 8 day) 
+   and    plan = p_plan
+   and    datein < p_trandate group by phone 
+   ) t group by phone;
+
+
+   select count(distinct phone) 
+   into   @NewUsers 
+   from (
+   select phone from powerapp_log a 
+   where  a.datein < date_add(p_trandate, interval 1 day)
+   and    a.datein >= p_trandate
+   and    plan = p_plan
+   and    not exists (
+   select 1 from powerapp_last_week_users b
+   where  a.phone = b.phone)
+   union
+   select phone from powerapp_flu.powerapp_log a 
+   where  a.datein < date_add(p_trandate, interval 1 day)
+   and    a.datein >= p_trandate
+   and    plan = p_plan
+   and    not exists (
+   select 1 from powerapp_last_week_users b
+   where  a.phone = b.phone)
+   ) t;
+    
+   drop table powerapp_last_week_users;
+   -- truncate table powerapp_last_week_users;
+   -- end count of new users
+
+   insert into powerapp_retention_stats_plan values (p_trandate, p_plan, @Day_7, @Day_6, @Day_5, @Day_4, @Day_3, @Day_2, @Day_1, @NewUsers, date_sub(p_trandate, interval 7 day) );
+
+end;
+//
+delimiter ;
+
+drop procedure if exists sp_generate_retention_stats_plan_main;
+delimiter //
+create procedure sp_generate_retention_stats_plan_main (p_trandate varchar(10))
+begin
+   call sp_generate_retention_stats_plan ('CHAT', p_trandate);
+   call sp_generate_retention_stats_plan ('EMAIL', p_trandate);
+   call sp_generate_retention_stats_plan ('PHOTO', p_trandate);
+   call sp_generate_retention_stats_plan ('UNLI', p_trandate);
+   call sp_generate_retention_stats_plan ('SOCIAL', p_trandate);
+   call sp_generate_retention_stats_plan ('SPEEDBOOST', p_trandate);
+end;
+//
+delimiter ;
+
+
+
+call sp_generate_retention_stats_plan_main('2014-02-24');
+call sp_generate_retention_stats_plan_main('2014-02-23');
+call sp_generate_retention_stats_plan_main('2014-02-22');
+call sp_generate_retention_stats_plan_main('2014-02-21');
+call sp_generate_retention_stats_plan_main('2014-02-20');
+call sp_generate_retention_stats_plan_main('2014-02-19');
+call sp_generate_retention_stats_plan_main('2014-02-18');
+call sp_generate_retention_stats_plan_main('2014-02-17');
+call sp_generate_retention_stats_plan_main('2014-02-16');
+call sp_generate_retention_stats_plan_main('2014-02-15');
+call sp_generate_retention_stats_plan_main('2014-02-14');
+call sp_generate_retention_stats_plan_main('2014-02-13');
+call sp_generate_retention_stats_plan_main('2014-02-12');
+call sp_generate_retention_stats_plan_main('2014-02-11');
+call sp_generate_retention_stats_plan_main('2014-02-10');
+call sp_generate_retention_stats_plan_main('2014-02-09');
+call sp_generate_retention_stats_plan_main('2014-02-08');
+call sp_generate_retention_stats_plan_main('2014-02-07');
+call sp_generate_retention_stats_plan_main('2014-02-06');
+call sp_generate_retention_stats_plan_main('2014-02-05');
+call sp_generate_retention_stats_plan_main('2014-02-04');
+call sp_generate_retention_stats_plan_main('2014-02-03');
+call sp_generate_retention_stats_plan_main('2014-02-02');
+call sp_generate_retention_stats_plan_main('2014-02-01');
+
+-- January
+call sp_generate_retention_stats_plan_main('2014-01-31');
+call sp_generate_retention_stats_plan_main('2014-01-30');
+call sp_generate_retention_stats_plan_main('2014-01-29');
+call sp_generate_retention_stats_plan_main('2014-01-28');
+call sp_generate_retention_stats_plan_main('2014-01-27');
+call sp_generate_retention_stats_plan_main('2014-01-26');
+call sp_generate_retention_stats_plan_main('2014-01-25');
+call sp_generate_retention_stats_plan_main('2014-01-24');
+call sp_generate_retention_stats_plan_main('2014-01-23');
+call sp_generate_retention_stats_plan_main('2014-01-22');
+call sp_generate_retention_stats_plan_main('2014-01-21');
+call sp_generate_retention_stats_plan_main('2014-01-20');
+call sp_generate_retention_stats_plan_main('2014-01-19');
+call sp_generate_retention_stats_plan_main('2014-01-18');
+call sp_generate_retention_stats_plan_main('2014-01-17');
+call sp_generate_retention_stats_plan_main('2014-01-16');
+call sp_generate_retention_stats_plan_main('2014-01-15');
+call sp_generate_retention_stats_plan_main('2014-01-14');
+call sp_generate_retention_stats_plan_main('2014-01-13');
+call sp_generate_retention_stats_plan_main('2014-01-12');
+call sp_generate_retention_stats_plan_main('2014-01-11');
+call sp_generate_retention_stats_plan_main('2014-01-10');
+call sp_generate_retention_stats_plan_main('2014-01-09');
+call sp_generate_retention_stats_plan_main('2014-01-08');
+call sp_generate_retention_stats_plan_main('2014-01-07');
+call sp_generate_retention_stats_plan_main('2014-01-06');
+call sp_generate_retention_stats_plan_main('2014-01-05');
+call sp_generate_retention_stats_plan_main('2014-01-04');
+call sp_generate_retention_stats_plan_main('2014-01-03');
+call sp_generate_retention_stats_plan_main('2014-01-02');
+call sp_generate_retention_stats_plan_main('2014-01-01');
+-- December
+call sp_generate_retention_stats_plan_main('2013-12-31');
+call sp_generate_retention_stats_plan_main('2013-12-30');
+call sp_generate_retention_stats_plan_main('2013-12-29');
+call sp_generate_retention_stats_plan_main('2013-12-28');
+call sp_generate_retention_stats_plan_main('2013-12-27');
+call sp_generate_retention_stats_plan_main('2013-12-26');
+call sp_generate_retention_stats_plan_main('2013-12-25');
+call sp_generate_retention_stats_plan_main('2013-12-24');
+call sp_generate_retention_stats_plan_main('2013-12-23');
+call sp_generate_retention_stats_plan_main('2013-12-22');
+call sp_generate_retention_stats_plan_main('2013-12-21');
+call sp_generate_retention_stats_plan_main('2013-12-20');
+call sp_generate_retention_stats_plan_main('2013-12-19');
+call sp_generate_retention_stats_plan_main('2013-12-18');
+call sp_generate_retention_stats_plan_main('2013-12-17');
+call sp_generate_retention_stats_plan_main('2013-12-16');
+call sp_generate_retention_stats_plan_main('2013-12-15');
+call sp_generate_retention_stats_plan_main('2013-12-14');
+call sp_generate_retention_stats_plan_main('2013-12-13');
+call sp_generate_retention_stats_plan_main('2013-12-12');
+call sp_generate_retention_stats_plan_main('2013-12-11');
+call sp_generate_retention_stats_plan_main('2013-12-10');
+call sp_generate_retention_stats_plan_main('2013-12-09');
+call sp_generate_retention_stats_plan_main('2013-12-08');
+call sp_generate_retention_stats_plan_main('2013-12-07');
+call sp_generate_retention_stats_plan_main('2013-12-06');
+call sp_generate_retention_stats_plan_main('2013-12-05');
+call sp_generate_retention_stats_plan_main('2013-12-04');
+call sp_generate_retention_stats_plan_main('2013-12-03');
+call sp_generate_retention_stats_plan_main('2013-12-02');
+call sp_generate_retention_stats_plan_main('2013-12-01');
+
+select * from powerapp_retention_stats_plan order by tran_dt desc;
+

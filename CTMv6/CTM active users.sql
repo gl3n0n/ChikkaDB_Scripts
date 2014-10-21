@@ -1,0 +1,1 @@
+create table test.ctm_mui as select 'globe' carrier, datein, tx_from from bridge_in where status = 2 and tx_type = 'chat' group by 1,2,3;

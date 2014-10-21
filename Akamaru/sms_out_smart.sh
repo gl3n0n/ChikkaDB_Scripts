@@ -1,0 +1,16 @@
+./sms_out_smart.pl 2013-07-08
+./sms_out_smart.pl 2013-07-09
+./sms_out_smart.pl 2013-07-10
+./sms_out_smart.pl 2013-07-11
+./sms_out_smart.pl 2013-07-12
+./sms_out_smart.pl 2013-07-13
+./sms_out_smart.pl 2013-07-14
+./sms_out_smart.pl 2013-07-15
+./sms_out_smart.pl 2013-07-16
+./sms_out_smart.pl 2013-07-17
+./sms_out_smart.pl 2013-07-18
+./sms_out_smart.pl 2013-07-19
+./sms_out_smart.pl 2013-07-20
+./sms_out_smart.pl 2013-07-21
+./sms_out_smart.pl 2013-07-22
+./sms_out_smart.pl 2013-07-23

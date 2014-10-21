@@ -1,0 +1,476 @@
+set session tmp_table_size = 268435456;
+set session max_heap_table_size = 268435456;
+set session sort_buffer_size = 104857600;
+set session read_buffer_size = 8388608;
+
+
+1. New Registrations 2012
+select left(registration_datetime, 7) reg_month, carrier, count(1) from registrations_pht where source <> 'web' and registration_datetime < '2013-01-01' and carrier is not null group by 1, carrier;
++-----------+---------+----------+----------+----------+----------+
+| reg_month | carrier |    Globe |    Smart |      Sun |       PC |
++-----------+---------+----------+----------+----------+----------+
+| 2012-01   | Globe   |   197839 |   283409 |    69675 |    81526 |
+| 2012-02   | Globe   |   187050 |   268945 |    67174 |    75295 |
+| 2012-03   | Globe   |   197550 |   280105 |    71929 |    79252 |
+| 2012-04   | Globe   |   187770 |   282994 |    70074 |    78645 |
+| 2012-05   | Globe   |   212659 |   308461 |    79467 |    86476 |
+| 2012-06   | Globe   |   201840 |   284587 |    75845 |    82166 |
+| 2012-07   | Globe   |   204786 |   288880 |    76997 |    79847 |
+| 2012-08   | Globe   |   218166 |   304933 |    83923 |    81264 |
+| 2012-09   | Globe   |   204028 |   288186 |    80435 |    76662 |
+| 2012-10   | Globe   |   199177 |   278774 |    79192 |    74851 |
+| 2012-11   | Globe   |   111434 |   155301 |    43790 |    42973 |
+| 2012-12   | Globe   |    95741 |   134312 |    35470 |    39510 |
++-----------+---------+----------+----------+----------+----------+
+
+2. New Registrations 2013
+select left(registration_datetime, 7) reg_month, carrier, count(1) from registrations_pht where source <> 'web' and registration_datetime >= '2013-01-01' and carrier is not null group by 1, carrier;
++-----------+---------+----------+----------+----------+----------+
+| reg_month | carrier |    Globe |    Smart |      Sun |       PC |
++-----------+---------+----------+----------+----------+----------+
+| 2013-01   | Globe   |    63601 |    92385 |    24099 |    49576 |
+| 2013-02   | Globe   |   161871 |   219202 |    55166 |    59975 |
+| 2013-03   | Globe   |   201868 |   285980 |    61596 |    80530 |
+| 2013-04   | Globe   |   207841 |   301858 |    77047 |    81120 |
+| 2013-05   | Globe   |   205534 |   293503 |    77080 |    79855 |
+| 2013-06   | Globe   |   195850 |   282777 |    73159 |    71593 |
+| 2013-07   | Globe   |   205948 |   296588 |    78212 |    73714 |
+| 2013-08   | Globe   |   163013 |   225725 |    61070 |    58581 |
+| 2013-09   | Globe   |   200020 |   273721 |    75293 |    66042 |
+| 2013-10   | Globe   |    19990 |    27169 |     7466 |     6026 |
++-----------+---------+----------+----------+----------+----------+
+
+create table test.ctm_monthly_reg select chikka_id, concat(left(registration_datetime,7), '-01'), 'post' brand reg_month from registrations_pht where source <> 'web' and registration_datetime >= '2013-01-01' and carrier is not null group by 1, 2,3;
+alter table ctm_monthly_reg add carrier varchar(12) after reg_month;
+
+delimiter //
+
+drop procedure IF EXISTS sp_get_ctm_reg_brand//
+create procedure sp_get_ctm_reg_brand ()
+begin
+   declare vCarrier, vSim_type, vPattern varchar(150);
+   declare dStart, dEnd varchar(150);
+   declare done_p int default 0;
+   declare c_pat cursor for select lower(operator) operator, sim_type, pattern
+                            from  mobile_pattern
+                            order by sim_type;
+   declare continue handler for sqlstate '02000' set done_p = 1;
+
+   OPEN c_pat;
+   REPEAT
+      FETCH c_pat into vCarrier, vSim_type, vPattern;
+      if not done_p then
+         SET @vSql = concat('update ctm_monthly_reg set carrier =''', vCarrier, ''' ,brand=''', vSim_type, ''' where chikka_id REGEXP ''^', vPattern, '$''');
+         select @vSql;
+         PREPARE stmt FROM @vSql;
+         EXECUTE stmt;
+         DEALLOCATE PREPARE stmt;
+      end if;
+   UNTIL done_p
+   END REPEAT;
+   SET @vSql = concat('insert into ctm_stats_dtl_reg select tran_dt, type, carrier, sim_type, sum(hits) from (select left(registration_datetime,10) tran_dt, ''reg'' type,''TOTAL'' carrier,''OTHERS'' sim_type, count(1) hits from ctm_stats.registrations_pht where registration_datetime >= ''', dStart, ''' and registration_datetime < ''', dEnd, ''' GROUP BY 1 union select ''', dStart, ''', ''reg'', ''TOTAL'', ''OTHERS'', 0) a group by 1,2,3  ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+end;
+//
+
+delimiter ;
+
+call sp_get_ctm_reg_brand();     
+
+GLOBE
++------------+----------+----------+----------+
+| reg_month  |     POST |      PRE |       TM |
++------------+----------+----------+----------+
+| 2013-01-01 |     5886 |    34479 |    22414 |
+| 2013-02-01 |    15668 |    84759 |    56786 |
+| 2013-03-01 |    19054 |   102563 |    72313 |
+| 2013-04-01 |    19276 |   103016 |    77721 |
+| 2013-05-01 |    19133 |   101839 |    77401 |
+| 2013-06-01 |    18885 |    96696 |    74264 |
+| 2013-07-01 |    19983 |   100892 |    78759 |
+| 2013-08-01 |    15720 |    79080 |    62028 |
+| 2013-09-01 |    19702 |    96732 |    73506 |
+| 2013-10-01 |     1983 |     9691 |     7098 |
++------------+----------+----------+----------+
+SMART
++------------+----------+----------+----------+
+| reg_month  |     POST |      PRE |      TNT |
++------------+----------+----------+----------+
+| 2013-01-01 |     2984 |    42391 |    43066 |
+| 2013-02-01 |     7683 |   100646 |   101331 |
+| 2013-03-01 |     9375 |   128451 |   136152 |
+| 2013-04-01 |     9810 |   132947 |   146065 |
+| 2013-05-01 |     9802 |   131614 |   139191 |
+| 2013-06-01 |     9145 |   127059 |   134228 |
+| 2013-07-01 |     9742 |   134268 |   139684 |
+| 2013-08-01 |     7138 |   101368 |   106686 |
+| 2013-09-01 |     8826 |   123600 |   128127 |
+| 2013-10-01 |      895 |    12629 |    12325 |
++------------+----------+----------+----------+
+SUN
++------------+----------+----------+
+| reg_month  |     POST |      PRE |
++------------+----------+----------+
+| 2013-01-01 |     3512 |    20587 |
+| 2013-02-01 |     8167 |    46999 |
+| 2013-03-01 |     8849 |    52747 |
+| 2013-04-01 |    10714 |    66333 |
+| 2013-05-01 |    10757 |    66323 |
+| 2013-06-01 |    10143 |    63016 |
+| 2013-07-01 |    10593 |    67613 |
+| 2013-08-01 |     8248 |    52801 |
+| 2013-09-01 |    10120 |    65152 |
+| 2013-10-01 |      985 |     6479 |
++------------+----------+----------+
+
+
+
+3. Number of active accounts from Sept 1, 2013 to present. Active accounts are those who sent at least 1 message either using the app or via 2814.
+
+select datein, count(distinct tx_from) active_user from ctm_mui group by 1;
+select count(distinct tx_from) as "PC Acct" from ctm_mui where tx_from like '00%' and datein >= '2013-09-01';
+select count(distinct tx_from) as "Mobile Acct" from ctm_mui where tx_from like '63%' and datein >= '2013-09-01';
+
++----------+--------------+
+| Month    | Active Users |
++----------+--------------+
+| 2013-03  |      2519370 |
+| 2013-04  |      2584320 |
+| 2013-05  |      2665652 |
+| 2013-06  |      2584825 |
+| 2013-07  |      2648535 |
+| 2013-08  |      2626113 |
+| 2013-09  |      2605151 |
++----------+--------------+
+7 rows in set (2 min 59.25 sec)
+
+
+
+4. Total number of active accounts from the past 6 months. Active accounts are those who sent at least 1 messages, either using the app or via 2814, for the past 6 months.
+
+
+
+delimiter //
+
+drop procedure IF EXISTS sp_get_ctm_active_users//
+create procedure sp_get_ctm_active_users (p_month varchar(20))
+begin
+   declare vPartitionName varchar(150);
+   declare done_p int default 0;
+   declare c_pat cursor for select partition_name from information_schema.partitions where table_name = 'bridge_in' and partition_name like concat(p_month, '%') group by 1 order by 1;
+   declare continue handler for sqlstate '02000' set done_p = 1;
+
+   OPEN c_pat;
+   REPEAT
+      FETCH c_pat into vPartitionName;
+      if not done_p then
+         SET @vSql = concat('insert into ctm_active_users select ''globe'' carrier, datein, tx_to, ''c'' tx_type, count(1) tx_cnt from mui_ph_globe_1.bridge_in partition (', vPartitionName, ') where status = 2 and tx_type = ''chat'' group by 1,2,3,4' );
+         PREPARE stmt FROM @vSql;
+         EXECUTE stmt;
+         DEALLOCATE PREPARE stmt;
+         SET @vSql = concat('insert into ctm_active_users select ''smart'' carrier, datein, tx_to, ''c'' tx_type, count(1) tx_cnt from mui_ph_smart_1.bridge_in partition (', vPartitionName, ') where status = 2 and tx_type = ''chat'' group by 1,2,3,4' );
+         PREPARE stmt FROM @vSql;
+         EXECUTE stmt;
+         DEALLOCATE PREPARE stmt;
+         SET @vSql = concat('insert into ctm_active_users select ''sun'' carrier, datein, tx_to, ''c'' tx_type, count(1) tx_cnt from mui_ph_sun_1.bridge_in partition (', vPartitionName, ') where status = 2 and tx_type = ''chat'' group by 1,2,3,4' );
+         PREPARE stmt FROM @vSql;
+         EXECUTE stmt;
+         DEALLOCATE PREPARE stmt;
+
+         SET @vSql = concat('insert into ctm_active_users select ''globe'' carrier, datein, tx_from, ''m'' tx_type, count(1) tx_cnt from mui_ph_globe_1.bridge_out partition (', vPartitionName, ') where status = 2 and tx_type = ''messaging'' group by 1,2,3,4' );
+         PREPARE stmt FROM @vSql;
+         EXECUTE stmt;
+         DEALLOCATE PREPARE stmt;
+         SET @vSql = concat('insert into ctm_active_users select ''smart'' carrier, datein, tx_from, ''m'' tx_type, count(1) tx_cnt from mui_ph_smart_1.bridge_out partition (', vPartitionName, ') where status = 2 and tx_type = ''messaging'' group by 1,2,3,4' );
+         PREPARE stmt FROM @vSql;
+         EXECUTE stmt;
+         DEALLOCATE PREPARE stmt;
+         SET @vSql = concat('insert into ctm_active_users select ''sun'' carrier, datein, tx_from, ''m'' tx_type, count(1) tx_cnt from mui_ph_sun_1.bridge_out partition (', vPartitionName, ') where status = 2 and tx_type = ''messaging'' group by 1,2,3,4' );
+         PREPARE stmt FROM @vSql;
+         EXECUTE stmt;
+         DEALLOCATE PREPARE stmt;
+
+         SET @vSql = concat('insert into ctm_active_users select carrier, datein, tx_from, tx_type, sum(tx_cnt) tx_cnt from ( ',
+                            'select ''pc'' carrier, datein, tx_from, ''c'' tx_type, count(1) tx_cnt from mui_ph_globe_1.bridge_in partition (', vPartitionName, ') where status = 2 and tx_type = ''chat'' and tx_from like ''00%'' group by 1,2,3,4 union ',
+                            'select ''pc'' carrier, datein, tx_from, ''c'' tx_type, count(1) tx_cnt from mui_ph_smart_1.bridge_in partition (', vPartitionName, ') where status = 2 and tx_type = ''chat'' and tx_from like ''00%'' group by 1,2,3,4 union ',
+                            'select ''pc'' carrier, datein, tx_from, ''c'' tx_type, count(1) tx_cnt from mui_ph_sun_1.bridge_in   partition (', vPartitionName, ') where status = 2 and tx_type = ''chat'' and tx_from like ''00%'' group by 1,2,3,4) as tab_pc group by 1,2,3,4');
+         PREPARE stmt FROM @vSql;
+         EXECUTE stmt;
+         DEALLOCATE PREPARE stmt;
+
+      end if;
+   UNTIL done_p
+   END REPEAT;
+end;
+//
+
+delimiter ;
+
+call sp_get_ctm_active_users();
+
+
+select left(datein,7) Month, count(distinct tx_from) active_user from ctm_mui group by 1;
+mysql> select left(datein,7), count(distinct chikkaid) from ctm_active_users group by 1;
+ERROR 2006 (HY000): MySQL server has gone away
+No connection. Trying to reconnect...
+Connection id:    73264
+Current database: test
+
++--------------+
+| Active Users |
++--------------+
+|      8729761 |
++--------------+
+1 row in set (2 min 11.45 sec)
+
+
+5. Number of messages sent from app (iOS, Android, client, web, Chrome) to Smart, Globe, Sun. Could we get monthly stats from January 2013 to September 2013?
+select left(date,7) month, client, sum(total) from message where sender_domain='PC' and recipient_domain='MO'  group by 1,2 order by 2,1;
++---------+------------+------------+------------+------------+------------+------------+------------+
+| Month   |        Web |     Client |    Android |        iOS |     Chrome |     Chrome |      Phone |
++---------+------------+------------+------------+------------+------------+------------+------------+
+| 2013-01 |     253371 |    3715187 |     449114 |     669638 |       1545 |       1545 |     313548 |
+| 2013-02 |     357484 |    4891147 |     739959 |    1340775 |       1223 |       1223 |     500382 |
+| 2013-03 |     284640 |    6026632 |     895948 |    1389496 |       7569 |       7569 |     517365 |
+| 2013-04 |     249182 |    5930982 |    1284406 |    1478044 |       4998 |       4998 |     535780 |
+| 2013-05 |     281647 |    5404517 |    1139862 |    1305642 |       2702 |       2702 |     483868 |
+| 2013-06 |     184352 |    4343544 |    1003105 |    1070638 |        909 |        909 |     366826 |
+| 2013-07 |     303494 |    4369414 |    1703188 |    1013302 |         33 |         33 |     406060 |
+| 2013-08 |     210417 |    3104316 |     897106 |    1135757 |       2298 |       2298 |     325470 |
+| 2013-09 |     299903 |    3678335 |    1600926 |    1195213 |        571 |        571 |     374108 |
+| 2013-10 |      40450 |     357545 |     151652 |      76931 |        541 |        541 |      38729 |
++---------+------------+------------+------------+------------+------------+------------+------------+
+
+select left(date,7) month, recipient, sum(total) from message where recipient_domain='MO' and recipient in ('Globe','Smart', 'Sun') group by 1,2 order by 2,1;
++---------+------------+------------+------------+
+| Month   |      Globe |      Smart |        Sun |
++---------+------------+------------+------------+
+| 2013-01 |    2182923 |    2833983 |     385883 |
+| 2013-02 |    3288748 |    4097634 |     444586 |
+| 2013-03 |    3711575 |    4925290 |     477035 |
+| 2013-04 |    3712788 |    5063644 |     706921 |
+| 2013-05 |    3450199 |    4486163 |     681965 |
+| 2013-06 |    2599700 |    3745282 |     620455 |
+| 2013-07 |    2830259 |    4247704 |     714498 |
+| 2013-08 |    2091434 |    2965519 |     613339 |
+| 2013-09 |    2597556 |    3788019 |     763478 |
+| 2013-10 |     198401 |     379994 |      87453 |
++---------+------------+------------+------------+
+
+select left(date,7) month, recipient, sum(total) from message where sender_domain='PC' and recipient_domain='MO' and recipient in ('Globe','Smart', 'Sun') group by 1,2 order by 2,1;
++---------+------------+------------+------------+
+| Month   |      Globe |      Smart |        Sun |
++---------+------------+------------+------------+
+| 2013-01 |    2064585 |    2653827 |     370829 | 
+| 2013-02 |    3098830 |    3808143 |     423613 | 
+| 2013-03 |    3516164 |    4622511 |     457860 | 
+| 2013-04 |    3516596 |    4749087 |     681890 | 
+| 2013-05 |    3272977 |    4202132 |     659350 | 
+| 2013-06 |    2463665 |    3530253 |     604819 | 
+| 2013-07 |    2681905 |    4009460 |     695036 | 
+| 2013-08 |    1974068 |    2774791 |     595963 | 
+| 2013-09 |    2461819 |    3570895 |     742231 | 
+| 2013-10 |     184608 |     357094 |      85417 | 
++---------+------------+------------+------------+
+
+
+## 'aurora', 'chikka_desktop', 'gero', 'iChikka', 'lighter'
+select left(date,7) month, recipient, client, sum(total) from message where sender_domain='PC' and recipient_domain='MO' and recipient in ('Globe', 'Smart', 'Sun') and client in ('aurora', 'chikka_desktop', 'gero', 'iChikka', 'lighter') group by 1,2,3 order by 2,3,1;
+6. Number of messages sent from app (iOS, Android, client, web, Chrome) to Smart from January 2013 to September 2013 (monthly).
+
++---------+-----------+------------+------------+------------+------------+------------+
+| Month   | Carrier   |        Web |     Client |    Android |        iOS |     Chrome |
++---------+-----------+------------+------------+------------+------------+------------+
+| 2013-01 | Smart     |      31993 |    2113132 |     212087 |     295070 |       1545 |
+| 2013-02 | Smart     |     153565 |    2730485 |     468970 |     455123 |          0 |
+| 2013-03 | Smart     |      26086 |    3431972 |     671383 |     489086 |       3984 |
+| 2013-04 | Smart     |      51172 |    3462142 |     747007 |     486091 |       2675 |
+| 2013-05 | Smart     |      74233 |    3033717 |     675017 |     416463 |       2474 |
+| 2013-06 | Smart     |      24933 |    2575918 |     489832 |     439421 |        149 |
+| 2013-07 | Smart     |      19745 |    2599774 |     985420 |     404517 |          0 |
+| 2013-08 | Smart     |      34895 |    1877990 |     428419 |     432037 |       1450 |
+| 2013-09 | Smart     |      22755 |    2225072 |     900188 |     422357 |        523 |
++---------+-----------+------------+------------+------------+------------+------------+
+
+7. Number of messages sent from app (iOS, Android, client, web, Chrome) to Globe from January 2013 to September 2013 (monthly).
++---------+-----------+------------+------------+------------+------------+------------+
+| Month   | Carrier   |        Web |     Client |    Android |        iOS |     Chrome |
++---------+-----------+------------+------------+------------+------------+------------+
+| 2013-01 | Globe     |     130556 |    1449219 |     148195 |     336216 |          0 |
+| 2013-02 | Globe     |     146629 |    2006900 |     141917 |     802364 |       1020 |
+| 2013-03 | Globe     |     197013 |    2415411 |      72366 |     827789 |       3585 |
+| 2013-04 | Globe     |     141496 |    2292407 |     228381 |     852010 |       2302 |
+| 2013-05 | Globe     |     127910 |    2214773 |     119554 |     810691 |         49 |
+| 2013-06 | Globe     |     113385 |    1629364 |     134186 |     586002 |        728 |
+| 2013-07 | Globe     |     203830 |    1673162 |     243639 |     561274 |          0 |
+| 2013-08 | Globe     |     116801 |    1065648 |     106921 |     683475 |        848 |
+| 2013-09 | Globe     |     183646 |    1363171 |     213113 |     701889 |          0 |
++---------+-----------+------------+------------+------------+------------+------------+
+
+8. Number of messages sent from app (iOS, Android, client, web, Chrome) to Sun from January 2013 to September 2013 (monthly).
++---------+-----------+------------+------------+------------+------------+------------+
+| Month   | Carrier   |        Web |     Client |    Android |        iOS |     Chrome |
++---------+-----------+------------+------------+------------+------------+------------+
+| 2013-01 | Sun       |      90821 |     152824 |      88832 |      38352 |          0 |
+| 2013-02 | Sun       |      57289 |     153761 |     129072 |      83288 |        203 |
+| 2013-03 | Sun       |      61536 |     171504 |     152199 |      72621 |          0 |
+| 2013-04 | Sun       |      56514 |     176394 |     309018 |     139943 |         21 |
+| 2013-05 | Sun       |      79503 |     155889 |     345291 |      78488 |        179 |
+| 2013-06 | Sun       |      45836 |     135868 |     379087 |      43996 |         32 |
+| 2013-07 | Sun       |      79909 |      93454 |     474129 |      47511 |         33 |
+| 2013-08 | Sun       |      58720 |     158744 |     358254 |      20245 |          0 |
+| 2013-09 | Sun       |      93500 |      90091 |     487625 |      70967 |         48 |
++---------+-----------+------------+------------+------------+------------+------------+
+
+9. Number of messages sent from Smart to Globe and to Sun from January 2013 to September 2013.
+select left(date,7) month, recipient, sum(total) from message where sender_domain='MO' and sender='Smart' and recipient_domain='MO' and recipient in ('Smart', 'Globe', 'Sun') group by 1,2 order by 2,1;
++---------+------------+------------+------------+
+| Month   |      Globe |        Sun |      Smart | 
++---------+------------+------------+------------+ 
+| 2013-01 |      23785 |       3353 |     115848 |
+| 2013-02 |      38263 |       4256 |     189747 |
+| 2013-03 |      38936 |       3730 |     199021 |
+| 2013-04 |      39488 |       5350 |     206118 |
+| 2013-05 |      35555 |       4999 |     183968 |
+| 2013-06 |      26731 |       3853 |     135267 |
+| 2013-07 |      29597 |       4565 |     148162 |
+| 2013-08 |      24392 |       3623 |     121326 |
+| 2013-09 |      28324 |       4706 |     138911 |
+| 2013-10 |       3096 |        480 |      14911 |
++---------+------------+------------+------------+
+                                      
+10. Number of messages sent from Globe to Smart and to Sun from January 2013 to September 2013.
+select left(date,7) month, recipient, sum(total) from message where sender_domain='MO' and sender='Globe' and recipient_domain='MO' and recipient in ('Smart', 'Sun', 'Globe') group by 1,2 order by 2,1;
++---------+------------+------------+------------+
+| Month   |      Smart |        Sun |      Globe |
++---------+------------+------------+------------+
+| 2013-01 |      55324 |       4731 |      89150 |
+| 2013-02 |      87551 |       6033 |     143530 |
+| 2013-03 |      92786 |       5161 |     149289 |
+| 2013-04 |      93520 |       7152 |     147345 |
+| 2013-05 |      84813 |       7172 |     132015 |
+| 2013-06 |      67481 |       6074 |     101756 |
+| 2013-07 |      76507 |       7065 |     110801 |
+| 2013-08 |      58441 |       5937 |      86154 |
+| 2013-09 |      65994 |       7225 |      99187 |
+| 2013-10 |       6611 |        590 |       9852 |
++---------+------------+------------+------------+
+
+11. Number of messages sent from Sun to Smart and to Globe from January 2013 to September 2013.
+select left(date,7) month, recipient, sum(total) from message where sender_domain='MO' and sender='Sun' and recipient_domain='MO' and recipient in ('Smart', 'Sun', 'Globe') group by 1,2 order by 2,1;
++---------+------------+------------+------------+
+| Month   |      Globe |      Smart |        Sun |
++---------+------------+------------+------------+
+| 2013-01 |       5403 |       8984 |       6970 |
+| 2013-02 |       8125 |      12193 |      10684 |
+| 2013-03 |       7186 |      10972 |      10284 |
+| 2013-04 |       9359 |      14919 |      12529 |
+| 2013-05 |       9652 |      14762 |      10444 |
+| 2013-06 |       7511 |      11882 |       5703 |
+| 2013-07 |       7955 |      13478 |       7832 |
+| 2013-08 |       6820 |      10961 |       7816 |
+| 2013-09 |       8226 |      12219 |       9316 |
+| 2013-10 |        845 |       1378 |        966 |
++---------+------------+------------+------------+
+
+
+
+
+
+
+
+
+create table ctm_logins (
+  carrier varchar(5) NOT NULL DEFAULT '',
+  datein date NOT NULL DEFAULT '0000-00-00',
+  chikkaid  varchar(12) NOT NULL,
+  country varchar(12),
+  desktop tinyint default 0,
+  iChikka  tinyint default 0,
+  aurora tinyint default 0,
+  lighter tinyint default 0,
+  gero tinyint default 0,
+  login_cnt tinyint default 0,
+  primary key (datein, chikkaid));
+
+delimiter //
+
+drop procedure IF EXISTS sp_get_ctm_logins//
+create procedure sp_get_ctm_logins (p_month varchar(20))
+begin
+   declare vPartitionName varchar(150);
+   declare done_p int default 0;
+   declare c_pat cursor for select partition_name from information_schema.partitions where table_name = 'logins_pht' and partition_name like concat(p_month, '%') group by 1 order by 1;
+   declare continue handler for sqlstate '02000' set done_p = 1;
+
+   OPEN c_pat;
+   REPEAT
+      FETCH c_pat into vPartitionName;
+      if not done_p then
+         SET @vSql = concat('insert ignore into ctm_logins select carrier, datein, chikka_id, max(country), max(desktop), max(iChikka), max(aurora), max(lighter), max(gero), count(1) from (select IF(carrier is null,''PC'', carrier) carrier, datein, chikka_id, IF(resource=''chikka_desktop'',1,0) desktop,IF(resource=''iChikka'',1,0) iChikka, IF(resource=''gero'',1,0) gero, IF(resource=''lighter'',1,0) lighter, IF(resource=''aurora'',1,0) aurora, country from ctm_stats.logins_pht partition (', vPartitionName, ')) as login_t group by 1,2,3' );
+         PREPARE stmt FROM @vSql;
+         EXECUTE stmt;
+         DEALLOCATE PREPARE stmt;
+      end if;
+   UNTIL done_p
+   END REPEAT;
+end;
+//
+
+delimiter ;
+
+select carrier, count(distinct chikkaid) uk_3mo from ctm_logins where datein >= '2013-08-01' and datein <= '2013-11-15' group by carrier;
+select carrier, count(distinct chikkaid) uk_6mo from ctm_logins where datein >= '2013-05-01' and datein <= '2013-11-15' group by carrier;
+select carrier, count(distinct chikkaid) uk_1yr from ctm_logins where datein >= '2013-01-01' and datein <= '2013-11-15' group by carrier;
+select carrier, count(distinct chikkaid) active_3mo from ctm_active_users where datein >= '2013-08-16' and datein <= '2013-11-15' group by carrier;
+select carrier, count(distinct chikkaid) active_6mo from ctm_active_users where datein >= '2013-05-16' and datein <= '2013-11-15' group by carrier;
+select carrier, count(distinct chikkaid) active_1yr from ctm_active_users where datein >= '2013-01-01' and datein <= '2013-11-15' group by carrier;
+select carrier, count(distinct chikkaid) uk_3mo from ctm_active_users where datein >= '2013-08-16' and datein <= '2013-11-15' and tx_type='m' group by carrier;
+select carrier, count(distinct chikkaid) uk_6mo from ctm_active_users where datein >= '2013-05-16' and datein <= '2013-11-15' and tx_type='m' group by carrier;
+select carrier, count(distinct chikkaid) uk_1yr from ctm_active_users where datein >= '2013-01-01' and datein <= '2013-11-15' and tx_type='m' group by carrier;
+
+Unique Logins
++---------+---------+---------+---------+
+| carrier | 3months | 6months | 1 year  |
++---------+---------+---------+---------+
+| Globe   |  178066 |  232262 |         |
+| PC      |  485023 |  628247 |         |
+| Smart   |  216681 |  283348 |         |
+| Sun     |   28362 |   38809 |         |
++---------+---------+---------+---------+
+4 rows in set (36.60 sec)
+
+Active Users
++---------+---------+---------+---------+
+| Carrier | 3months | 6months | 1 year  |
++---------+---------+---------+---------+
+| PC      |  428125 |  553588 |  712417 |
+| GLOBE   | 1977058 | 3021864 | 3768081 |
+| SMART   | 2527903 | 3935125 | 4948888 |
+| SUN     |  617352 |  952228 | 1169940 |
++---------+---------+---------+---------+
+
+No. of Unique Accounts with MO
++---------+---------+---------+---------+
+| Carrier | 3months | 6months | 1 year  |
++---------+---------+---------+---------+
+| GLOBE   |  548622 |  908792 | 1184223 |
+| SMART   |  580337 |  963358 | 1266420 |
+| SUN     |  121019 |  199480 |  252362 |
++---------+---------+---------+---------+
+
+Total Unique Users
++----------+----------+----------+
+|    globe |    smart |      sun |
++----------+----------+----------+
+| 11734194 | 17804537 |  3982247 |
++----------+----------+----------+
+
+select country, sum(desktop) Desktop, sum(iChikka) iOS, sum(aurora) Web, sum(lighter) Chrome, sum(gero) Android from ctm_logins where datein >= '2013-08-01' and datein <= '2013-11-15' group by 1;
+select carrier, sum(desktop) Desktop, sum(iChikka) iOS, sum(aurora) Web, sum(lighter) Chrome, sum(gero) Android from ctm_logins where datein >= '2013-08-01' and datein <= '2013-11-15' group by 1;
+
+select country, sum(desktop) Desktop, sum(iChikka) iOS, sum(aurora) Web, sum(lighter) Chrome, sum(gero) Android from ctm_logins where datein >= '2013-05-01' and datein <= '2013-11-15' group by 1;
+select carrier, sum(desktop) Desktop, sum(iChikka) iOS, sum(aurora) Web, sum(lighter) Chrome, sum(gero) Android from ctm_logins where datein >= '2013-05-01' and datein <= '2013-11-15' group by 1;

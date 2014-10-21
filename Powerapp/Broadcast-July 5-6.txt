@@ -1,0 +1,204 @@
+SERVER: DB-REPLICA (archive_powerapp_flu)
+
+Bong - 639474296630
+Rica - 639399369648
+Victor-639188039134
+       639188882728
+       639188088585           
+drop table if exists tmp_plan_users;
+create table tmp_plan_users (phone varchar(12) not null, plan varchar(20) not null, last_buy datetime, primary key (phone));
+create temporary table tmp_plan_active_users (phone varchar(12) not null, primary key (phone));
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from powerapp_flu.powerapp_log where plan = 'PHOTO' and brand='BUDDY' and datein >= '2014-07-05' group by phone;
+insert ignore into tmp_plan_users select phone, plan, max(datein) from powerapp_log a where plan='PHOTO' and brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) group by phone,plan;
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from powerapp_flu.powerapp_log where plan = 'EMAIL' and brand='BUDDY' and datein >= '2014-07-05' group by phone;
+insert ignore into tmp_plan_users select phone, plan, max(datein) from powerapp_log a where plan='EMAIL' and brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) group by phone,plan;
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from powerapp_flu.powerapp_log where plan = 'CHAT' and brand='BUDDY' and datein >= '2014-07-05' group by phone;
+insert ignore into tmp_plan_users select phone, plan, max(datein) from powerapp_log a where plan='CHAT' and brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) group by phone,plan;
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from powerapp_flu.powerapp_log where plan = 'SOCIAL' and brand='BUDDY' and datein >= '2014-07-05' group by phone;
+insert ignore into tmp_plan_users select phone, plan, max(datein) from powerapp_log a where plan='SOCIAL' and brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) group by phone,plan;
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from powerapp_flu.powerapp_log where plan = 'UNLI' and brand='BUDDY' and datein >= '2014-07-05' group by phone;
+insert ignore into tmp_plan_users select phone, plan, max(datein) from powerapp_log a where plan='UNLI' and brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) group by phone,plan;
+
+call sp_generate_inactive_list();
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from tmp_plan_users;
+insert into tmp_plan_users select phone, 'SCHOOL', now() from powerapp_inactive_list a where brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone);
+
+select phone into outfile '/tmp/PHOTO_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'PHOTO';
+select phone into outfile '/tmp/EMAIL_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'EMAIL';
+select phone into outfile '/tmp/CHAT_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'CHAT';
+select phone into outfile '/tmp/SOCIAL_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'SOCIAL';
+select phone into outfile '/tmp/UNLI_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'UNLI';
+select phone into outfile '/tmp/SCHOOL_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'SCHOOL';
+
+CREATE TABLE chikka_universe (
+  phone varchar(12) NOT NULL,
+  access_code varchar(6) NOT NULL DEFAULT '',
+  service varchar(20) NOT NULL DEFAULT '',
+  datein datetime DEFAULT NULL,
+  brand varchar(12) DEFAULT NULL,
+  PRIMARY KEY (phone,access_code,service)
+);
+
+CREATE TABLE chikka_mins_uniq (
+  phone varchar(12) NOT NULL,
+  brand varchar(12) NOT NULL,
+  PRIMARY KEY (phone)
+); 
+load data local infile '/tmp/smartbase__20140709.sql' into table chikka_universe fields terminated by '\t';
+insert ignore into chikka_mins_uniq select phone, max(brand) from chikka_universe group  by phone;
+
+create table tmp_plan_users_0706 like tmp_plan_users;
+insert into tmp_plan_users_0706 select * from tmp_plan_users;
+truncate table tmp_plan_users;
+
+create table tmp_plan_users_0709 like tmp_plan_users;
+insert into tmp_plan_users_0709 select * from tmp_plan_users;
+truncate table tmp_plan_users;
+
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from tmp_plan_users;
+insert into tmp_plan_users select phone, 'CHIKKA-PRE', now(), '2014-07-10' from chikka_mins_uniq a where brand='PREPAID' 
+and not exists (select 1 from tmp_plan_users_0705 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0706 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0707 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0709 b where a.phone = b.phone) 
+limit 2000000;
+--and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) 
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from tmp_plan_users;
+insert into tmp_plan_users select phone, 'CHIKKA-TNT', now(), '2014-07-07' from chikka_mins_uniq a where brand='TNT' 
+and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0705 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0706 b where a.phone = b.phone) 
+limit 1000000;
+
+select phone into outfile '/tmp/BUDDY_20140710.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'CHIKKA-PRE';
+select phone into outfile '/tmp/TNT_20140707.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'CHIKKA-TNT';
+select phone into outfile '/tmp/BUDDY_20140710.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'CHIKKA-PRE';
+
+
+
+/var/www/html/scripts/5555-powerapp/bcast
+
+
+
+
+
+
++-------------------+----------+
+| service           | count(1) |
++-------------------+----------+
+| APPTIVATE         |        1 |
+| AQUARIUS          |       57 |
+| ARIES             |       70 |
+| BIBLE             |      111 |
+| BUDDYVAS          |     3972 |
+| CANCER            |       58 |
+| CAPRICORN         |       63 |
+| CASH              |        1 |
+| CC                |        6 |
+| chikker           |       95 |
+| collecttxt        |   253518 |
+| ctmv5             |  6384933 |
+| ctmv6             |   408671 |
+| CUBITS            |        2 |
+| DOG               |       16 |
+| DRAGON            |       14 |
+| FREE              |     1843 |
+| FSCOINS           |        5 |
+| GAMEX             |      137 |
+| GARENA            |       83 |
+| GC                |       20 |
+| GEMINI            |       43 |
+| HEART AQUARIUS    |        9 |
+| HEART ARIES       |       10 |
+| HEART CANCER      |       10 |
+| HEART CAPRICORN   |        6 |
+| HEART GEMINI      |        7 |
+| HEART LEO         |       10 |
+| HEART LIBRA       |       10 |
+| HEART PISCES      |        5 |
+| HEART SAGITTARIUS |        6 |
+| HEART SCORPIO     |        7 |
+| HEART TAURUS      |        7 |
+| HEART VIRGO       |       12 |
+| HORSE             |       10 |
+| Infoboard         |   196770 |
+| KILIG             |      141 |
+| LAB               |      156 |
+| LEO               |       58 |
+| LIBRA             |       43 |
+| LU                |       18 |
+| LUCK              |       12 |
+| LUV               |      474 |
+| MARY              |       31 |
+| MCOINS            |       13 |
+| MERALCO7622       |        6 |
+| mobads            |   191394 |
+| MOL               |       74 |
+| MONKEY            |        4 |
+| netcast3          |   653755 |
+| NUM               |       45 |
+| ORIG              |       84 |
+| OX                |       20 |
+| PERA              |      123 |
+| PIG               |       12 |
+| PINOY             |       63 |
+| PISCES            |       38 |
+| PNCC              |        1 |
+| QUOTES            |        4 |
+| RABBIT            |        6 |
+| radyo5            |     5395 |
+| RAT               |       13 |
+| ROOSTER           |        7 |
+| SAGITTARIUS       |       44 |
+| SAMSUNG           |       20 |
+| SANTO             |       43 |
+| SCORPIO           |       62 |
+| SEVEN             |     3924 |
+| SHEEP             |       11 |
+| SNAKE             |       14 |
+| STEAM             |       10 |
+| TAURUS            |       61 |
+| TAWA              |       29 |
+| TEKSAKTO          |      185 |
+| TIGER             |        6 |
+| TIPID             |      140 |
+| TNT               |   326959 |
+| VIRGO             |       63 |
+| yesdb             |  1770653 |
++-------------------+----------+
+79 rows in set (10.53 sec)
+
+mysql> select brand, count(1) from chikka_mins_uniq group by 1;
++----------+----------+
+| brand    | count(1) |
++----------+----------+
+| POSTPAID |   260125 |
+| PREPAID  |  5820438 |
+| TNT      |  3724772 |
++----------+----------+
+3 rows in set (4.42 sec)
+
+mysql> select count(1) from chikka_mins_uniq;
++----------+
+| count(1) |
++----------+
+|  9805335 |
++----------+
+1 row in set (0.00 sec)
+
+

@@ -1,0 +1,84 @@
+Bong - 639474296630
+Rica - 639399369648
+Victor-639188039134
+       639188882728
+       639188088585
+Jefte- 639189087704      
+
+
+
+SU
+delete from tmp_chikka_mins where phone like '63947337%';
+delete from tmp_chikka_mins where phone like '63919220%';
+delete from tmp_chikka_mins where phone like '63918337%'; 
+Plus this MIN: 639493638683 
+delete from tmp_chikka_mins where phone = '639493638683';
+update tmp_chikka_mins set bcasted=1 where exists (select 1 from powerapp_flu.new_subscribers b where tmp_chikka_mins.phone= b.phone);
+
+set session tmp_table_size = 268435456;
+set session max_heap_table_size = 268435456;
+set session sort_buffer_size = 104857600;
+set session read_buffer_size = 8388608;
+truncate table tmp_plan_users;
+insert into tmp_plan_users select phone, brand, 'FACEBOOK', '2014-09-28', 'chikka' from tmp_chikka_mins a 
+where brand='TNT' and bcasted=0 
+and   not exists (select 1 from tmp_plan_users_0913 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0914 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0915 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0916 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0917 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0918 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0919 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0920 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0921 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0922 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0923 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0924 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0925 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0926 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0927 b where a.phone = b.phone) 
+limit 1300000;
+
+insert into tmp_plan_users select phone, brand, 'FACEBOOK', '2014-09-28', 'chikka' from tmp_chikka_mins a 
+where brand='BUDDY' and bcasted=0 
+and   not exists (select 1 from tmp_plan_users_0913 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0914 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0915 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0916 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0917 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0918 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0919 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0920 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0921 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0922 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0923 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0924 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0925 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0926 b where a.phone = b.phone) 
+and   not exists (select 1 from tmp_plan_users_0927 b where a.phone = b.phone) 
+limit 1300000;
+select bcast_dt, plan, brand, source, count(1) from tmp_plan_users group by 1,2,3,4;
+
+
+
+create table tmp_plan_users_0928 like tmp_plan_users;
+insert into tmp_plan_users_0928 select * from tmp_plan_users;
+select bcast_dt, plan, brand, source, count(1) from tmp_plan_users_0928 group by 1,2,3,4;
+select phone into outfile '/tmp/Powerapp_SUN_MINs.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log group by phone;
+select phone into outfile '/tmp/BUDDY_20140928.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'BUDDY';
+
+scp noc@172.17.250.40:/tmp/*20140928.csv /tmp/.
+scp /tmp/*20140928.csv noc@172.17.250.158:/tmp/.
+ssh noc@172.17.250.158
+vi /tmp/*20140928.csv
+639474296630
+639399369648
+639188039134
+639188882728
+639188088585
+639189087704
+wc -l /tmp/*20140928.csv 
+sort /tmp/*20140928.csv | uniq | wc -l
+cd /var/www/html/scripts/5555-powerapp/bcast/
+mv /tmp/*20140928.csv .
+

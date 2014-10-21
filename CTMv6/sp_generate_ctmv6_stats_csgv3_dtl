@@ -1,0 +1,831 @@
+DROP TABLE IF EXISTS ctmv6_stats_dtl;
+
+CREATE TABLE ctmv6_stats_dtl (
+  tran_dt date NOT NULL,
+  carrier varchar(30) NOT NULL,
+  type varchar(30) NOT NULL,
+  post int(8) NOT NULL DEFAULT 0,
+  pre int(8) NOT NULL DEFAULT 0,
+  tm_tnt int(8) NOT NULL DEFAULT 0,
+  tat_bro int(8) NOT NULL DEFAULT 0,
+  others int(8) NOT NULL DEFAULT 0,
+  total int default 0,
+  PRIMARY KEY (tran_dt,carrier,type)
+);
+
+delete from ctmv6_stats_dtl where type in ('hits','uniq_charged', 'uniq_nonreg', 'mt') and tran_dt  = '2014-01-27';
+
+delimiter //
+
+drop procedure IF EXISTS sp_generate_ctmv6_stats_csg//
+
+CREATE PROCEDURE sp_generate_ctmv6_stats_csg(p_trandate varchar(10))
+begin
+   declare vTranDate varchar(30);
+   if p_trandate is not null then
+      SET vTranDate  = p_trandate;
+   else
+      SET vTranDate  = date_sub(curdate(), interval 1 day);
+   end if;
+   call sp_generate_ctmv6_stats_globe(vTranDate);
+   call sp_generate_ctmv6_stats_smart(vTranDate);
+   call sp_generate_ctmv6_stats_sun(vTranDate);
+END;
+//
+
+CREATE PROCEDURE sp_regenerate_ctmv6_stats_csg(p_trandate varchar(10))
+begin
+   declare vTranDate varchar(30);
+   if p_trandate is not null then
+      SET vTranDate  = p_trandate;
+   else
+      SET vTranDate  = date_sub(curdate(), interval 1 day);
+   end if;
+   -- start  reprocessing (delete existing records)
+   delete from ctmv6_stats_dtl 
+   where  tran_dt = p_trandate
+   and    type in ('hits', 'mt', 'uniq_charged', 'uniq_nonreg');
+   -- end reprocessing
+   call sp_generate_ctmv6_stats_globe(vTranDate);
+   call sp_generate_ctmv6_stats_smart(vTranDate);
+   call sp_generate_ctmv6_stats_sun(vTranDate);
+END;
+//
+
+delimiter ;
+
+
+delimiter //
+
+drop procedure IF EXISTS sp_generate_ctmv6_stats_globe//
+
+CREATE PROCEDURE sp_generate_ctmv6_stats_globe(p_trandate varchar(10))
+begin
+   declare vPattern   Varchar(120);
+   declare vPostHits  int;
+   declare vPostUniq  int;
+   declare vPostNonR  int;
+   declare vPostMt    int;
+   declare vTMHits    int;
+   declare vTMUniq    int;
+   declare vTMNonR    int;
+   declare vTMMt      int;
+   declare vTatHits   int;
+   declare vTatUniq   int;
+   declare vTatNonR   int;
+   declare vTatMt     int;
+   declare vTotalHits int;
+   declare vTotalUniq int;
+   declare vTotalNonR int;
+   declare vTotalMt   int;
+
+   set session tmp_table_size = 268435456;
+   set session max_heap_table_size = 268435456;
+   set session sort_buffer_size = 104857600;
+   set session read_buffer_size = 8388608;
+
+   -- GLOBE
+   SET vPostHits  = 0;
+   SET vPostUniq  = 0;
+   SET vPostNonR  = 0;
+   SET vPostMt    = 0;
+   SET vTMHits    = 0;
+   SET vTMUniq    = 0;
+   SET vTMNonR    = 0;
+   SET vTMMt      = 0;
+   SET vTatHits   = 0;
+   SET vTatUniq   = 0;
+   SET vTatNonR   = 0;
+   SET vTatMt     = 0;
+   SET vTotalHits = 0;
+   SET vTotalUniq = 0;
+   SET vTotalNonR = 0;
+   SET vTotalMt   = 0;
+
+   BEGIN
+      declare done_p int default 0;
+      declare c_pat cursor for select pattern
+                               from  mobile_pattern
+                               where operator = 'GLOBE'
+                               and sim_type = 'POSTPAID';
+      declare continue handler for sqlstate '02000' set done_p = 1;
+   
+      OPEN c_pat;
+      REPEAT
+         FETCH c_pat into vPattern;
+         if not done_p then
+            SET @vSql = concat('select count(1) INTO @PostHits from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET @vSql = concat('select count(distinct gsm_num) INTO @PostUniq from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(distinct suffix) INTO @PostNonR from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and suffix REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(1) INTO @PostMt from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET vPostHits = vPostHits + @PostHits;
+            SET vPostUniq = vPostUniq + @PostUniq;
+            SET vPostNonR = vPostNonR + @PostNonR;
+            SET vPostMt   = vPostMt   + @PostMt;
+         end if;
+      UNTIL done_p
+      END REPEAT;
+   END;
+   
+   BEGIN
+      declare done_p int default 0;
+      declare c_pat cursor for select pattern
+                               from  mobile_pattern
+                               where operator = 'GLOBE'
+                               and sim_type = 'TM';
+      declare continue handler for sqlstate '02000' set done_p = 1;
+   
+      OPEN c_pat;
+      REPEAT
+         FETCH c_pat into vPattern;
+         if not done_p then
+            SET @vSql = concat('select count(1) INTO @TMHits from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET @vSql = concat('select count(distinct gsm_num) INTO @TMUniq from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(distinct suffix) INTO @TMNonR from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and suffix REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(1) INTO @TMMt from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET vTMHits = vTMHits + @TMHits;
+            SET vTMUniq = vTMUniq + @TMUniq;
+            SET vTMNonR = vTMNonR + @TMNonR;
+            SET vTMMt   = vTMMt   + @TMMt;
+
+         end if;
+      UNTIL done_p
+      END REPEAT;
+   END;
+
+   BEGIN
+      declare done_p int default 0;
+      declare c_pat cursor for select pattern
+                               from  mobile_pattern
+                               where operator = 'GLOBE'
+                               and sim_type = 'TATTOO';
+      declare continue handler for sqlstate '02000' set done_p = 1;
+   
+      OPEN c_pat;
+      REPEAT
+         FETCH c_pat into vPattern;
+         if not done_p then
+            SET @vSql = concat('select count(1) INTO @TatHits from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET @vSql = concat('select count(distinct gsm_num) INTO @TatUniq from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(distinct suffix) INTO @TatNonR from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and suffix REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(1) INTO @TatMt from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET vTatHits = vTatHits + @TatHits;
+            SET vTatUniq = vTatUniq + @TatUniq;
+            SET vTatNonR = vTatNonR + @TatNonR;
+            SET vTatMt   = vTatMt   + @TatMt;
+
+         end if;
+      UNTIL done_p
+      END REPEAT;
+   END;
+
+   SET @vSql = concat('select count(1) INTO @TotalHits from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('select count(distinct gsm_num) INTO @TotalUniq from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('select count(distinct suffix) INTO @TotalNonR from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('select count(1) INTO @TotalMt from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''GLOBE'' ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET vTotalHits = @TotalHits;
+   SET vTotalUniq = @TotalUniq;
+   SET vTotalNonR = @TotalNonR;
+   SET vTotalMt = @TotalMt;
+   
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, total) values (''', p_trandate ,''',''globe'',''hits'',', vPostHits, ',', vTotalHits-(vPostHits+vTMHits+vTatHits), ',', vTMHits, ',', vTatHits, ',', vTotalHits, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, total) values (''', p_trandate ,''',''globe'',''uniq_charged'',', vPostUniq, ',', vTotalUniq-(vPostUniq+vTMUniq+vTatUniq), ',', vTMuniq, ',', vTatUniq, ',', vTotalUniq, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, total) values (''', p_trandate ,''',''globe'',''uniq_nonreg'',', vPostNonR, ',', vTotalNonR-(vPostNonR+vTMNonR+vTatNonR), ',', vTMNonR, ',', vTatNonR, ',', vTotalNonR, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, total) values (''', p_trandate ,''',''globe'',''mt'',', vPostMt, ',', vTotalMt-(vPostMt+vTMMt+vTatMt), ',', vTMMt, ',', vTatMt, ',', vTotalMt, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SELECT 'Globe' Carrier, vTotalHits, vTotalUniq, vTotalNonR, vTotalMt;
+
+
+end;
+//
+
+delimiter ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+delimiter //
+
+drop procedure IF EXISTS sp_generate_ctmv6_stats_smart//
+
+CREATE PROCEDURE sp_generate_ctmv6_stats_smart(p_trandate varchar(10))
+begin
+   declare vPattern   Varchar(120);
+   declare vPostHits  int;
+   declare vPostUniq  int;
+   declare vPostNonR  int;
+   declare vPostMt    int;
+   declare vTnTHits   int;
+   declare vTnTUniq   int;
+   declare vTnTNonR   int;
+   declare vTnTMt     int;
+   declare vBroHits   int;
+   declare vBroUniq   int;
+   declare vBroNonR   int;
+   declare vBroMt     int;
+   declare vTotalHits int;
+   declare vTotalUniq int;
+   declare vTotalNonR int;
+   declare vTotalMt   int;
+
+   set session tmp_table_size = 268435456;
+   set session max_heap_table_size = 268435456;
+   set session sort_buffer_size = 104857600;
+   set session read_buffer_size = 8388608;
+
+   -- SMART
+   SET vPostHits  = 0;
+   SET vPostUniq  = 0;
+   SET vPostNonR  = 0;
+   SET vPostMt    = 0;
+   SET vTnTHits   = 0;
+   SET vTnTUniq   = 0;
+   SET vTnTNonR   = 0;
+   SET vTnTMt     = 0;
+   SET vBroHits   = 0;
+   SET vBroUniq   = 0;
+   SET vBroNonR   = 0;
+   SET vBroMt     = 0;
+   SET vTotalHits = 0;
+   SET vTotalUniq = 0;
+   SET vTotalNonR = 0;
+   SET vTotalMt   = 0;
+
+   BEGIN
+      declare done_p int default 0;
+      declare c_pat cursor for select pattern
+                               from  mobile_pattern
+                               where operator = 'SMART'
+                               and sim_type = 'POSTPAID';
+      declare continue handler for sqlstate '02000' set done_p = 1;
+   
+      OPEN c_pat;
+      REPEAT
+         FETCH c_pat into vPattern;
+         if not done_p then
+            SET @vSql = concat('select count(1) INTO @PostHits from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET @vSql = concat('select count(distinct gsm_num) INTO @PostUniq from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(distinct suffix) INTO @PostNonR from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and suffix REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(1) INTO @PostMt from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET vPostHits = vPostHits + @PostHits;
+            SET vPostUniq = vPostUniq + @PostUniq;
+            SET vPostNonR = vPostNonR + @PostNonR;
+            SET vPostMt   = vPostMt   + @PostMt;
+         end if;
+      UNTIL done_p
+      END REPEAT;
+   END;
+   
+
+   BEGIN
+      declare done_p int default 0;
+      declare c_pat cursor for select pattern
+                               from  mobile_pattern
+                               where operator = 'SMART'
+                               and sim_type = 'TNT';
+      declare continue handler for sqlstate '02000' set done_p = 1;
+   
+      OPEN c_pat;
+      REPEAT
+         FETCH c_pat into vPattern;
+         if not done_p then
+            SET @vSql = concat('select count(1) INTO @TnTHits from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET @vSql = concat('select count(distinct gsm_num) INTO @TnTUniq from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(distinct suffix) INTO @TnTNonR from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and suffix REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(1) INTO @TnTMt from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET vTnTHits = vTnTHits + @TnTHits;
+            SET vTnTUniq = vTnTUniq + @TnTUniq;
+            SET vTnTNonR = vTnTNonR + @TnTNonR;
+            SET vTnTMt   = vTnTMt   + @TnTMt;
+
+         end if;
+      UNTIL done_p
+      END REPEAT;
+   END;
+
+   BEGIN
+      declare done_p int default 0;
+      declare c_pat cursor for select pattern
+                               from  mobile_pattern
+                               where operator = 'SMART'
+                               and sim_type = 'BRO';
+      declare continue handler for sqlstate '02000' set done_p = 1;
+   
+      OPEN c_pat;
+      REPEAT
+         FETCH c_pat into vPattern;
+         if not done_p then
+            SET @vSql = concat('select count(1) INTO @BroHits from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET @vSql = concat('select count(distinct gsm_num) INTO @BroUniq from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(distinct suffix) INTO @BroNonR from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and suffix REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(1) INTO @BroMt from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET vBroHits = vBroHits + @BroHits;
+            SET vBroUniq = vBroUniq + @BroUniq;
+            SET vBroNonR = vBroNonR + @BroNonR;
+            SET vBroMt   = vBroMt   + @BroMt;
+
+         end if;
+      UNTIL done_p
+      END REPEAT;
+   END;
+
+   SET @vSql = concat('select count(1) INTO @TotalHits from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('select count(distinct gsm_num) INTO @TotalUniq from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' and status IN (''Delivered'',''Charged'') and (csg_tariff = ''CHG250'' or csg_tariff = ''CHG2.50'') ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('select count(distinct suffix) INTO @TotalNonR from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('select count(1) INTO @TotalMt from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SMART'' ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET vTotalHits = @TotalHits;
+   SET vTotalUniq = @TotalUniq;
+   SET vTotalNonR = @TotalNonR;
+   SET vTotalMt = @TotalMt;
+   
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, total) values (''', p_trandate ,''',''smart'',''hits'',', vPostHits, ',', vTotalHits-(vPostHits+vTnTHits+vBroHits), ',', vTnTHits, ',', vBroHits, ',', vTotalHits, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, total) values (''', p_trandate ,''',''smart'',''uniq_charged'',', vPostUniq, ',', vTotalUniq-(vPostUniq+vTnTUniq+vBroUniq), ',', vTnTUniq, ',', vBroUniq, ',', vTotalUniq, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, total) values (''', p_trandate ,''',''smart'',''uniq_nonreg'',', vPostNonR, ',', vTotalNonR-(vPostNonR+vTnTNonR+vBroNonR), ',', vTnTNonR, ',', vBroNonR, ',', vTotalNonR, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, total) values (''', p_trandate ,''',''smart'',''mt'',', vPostMt, ',', vTotalMt-(vPostMt+vTnTMt+vBroMt), ',', vTnTMt, ',', vBroMt, ',', vTotalMt, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SELECT 'Smart' Carrier, vTotalHits, vTotalUniq, vTotalNonR, vTotalMt;
+
+
+end;
+//
+
+delimiter ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+delimiter //
+
+drop procedure IF EXISTS sp_generate_ctmv6_stats_sun//
+
+CREATE PROCEDURE sp_generate_ctmv6_stats_sun(p_trandate varchar(10))
+begin
+   declare vPattern   Varchar(120);
+   declare vPostHits  int;
+   declare vPostUniq  int;
+   declare vPostNonR  int;
+   declare vPostMt    int;
+   declare vTotalHits int;
+   declare vTotalUniq int;
+   declare vTotalNonR int;
+   declare vTotalMt   int;
+
+   set session tmp_table_size = 268435456;
+   set session max_heap_table_size = 268435456;
+   set session sort_buffer_size = 104857600;
+   set session read_buffer_size = 8388608;
+
+   -- SUN
+   SET vPostHits  = 0;
+   SET vPostUniq  = 0;
+   SET vPostNonR  = 0;
+   SET vPostMt    = 0;
+   SET vTotalHits = 0;
+   SET vTotalUniq = 0;
+   SET vTotalNonR = 0;
+   SET vTotalMt   = 0;
+
+   BEGIN
+      declare done_p int default 0;
+      declare c_pat cursor for select pattern
+                               from  mobile_pattern
+                               where operator = 'SUN'
+                               and sim_type = 'POSTPAID';
+      declare continue handler for sqlstate '02000' set done_p = 1;
+   
+      OPEN c_pat;
+      REPEAT
+         FETCH c_pat into vPattern;
+         if not done_p then
+            SET @vSql = concat('select count(1) INTO @PostHits from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SUN'' and status IN (''Delivered'',''Charged'') and tariff = ''123000030'' and svc_desc = ''01000001C'' and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET @vSql = concat('select count(distinct gsm_num) INTO @PostUniq from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SUN'' and status IN (''Delivered'',''Charged'') and tariff = ''123000030'' and svc_desc = ''01000001C'' and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(distinct suffix) INTO @PostNonR from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SUN'' and suffix REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+
+            SET @vSql = concat('select count(1) INTO @PostMt from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SUN'' and gsm_num REGEXP ''^', vPattern, '$''');
+            PREPARE stmt FROM @vSql;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+   
+            SET vPostHits = vPostHits + @PostHits;
+            SET vPostUniq = vPostUniq + @PostUniq;
+            SET vPostNonR = vPostNonR + @PostNonR;
+            SET vPostMt   = vPostMt   + @PostMt;
+         end if;
+      UNTIL done_p
+      END REPEAT;
+   END;
+   
+   SET @vSql = concat('select count(1) INTO @TotalHits from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SUN'' and status IN (''Delivered'',''Charged'') and tariff = ''123000030'' and svc_desc = ''01000001C'' ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('select count(distinct gsm_num) INTO @TotalUniq from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SUN'' and status IN (''Delivered'',''Charged'') and tariff = ''123000030'' and svc_desc = ''01000001C'' ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('select count(distinct suffix) INTO @TotalNonR from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SUN'' ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('select count(1) INTO @TotalMt from csgv3_v6.sms_out where datesent=''', p_trandate ,''' and operator = ''SUN'' ');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET vTotalHits = @TotalHits;
+   SET vTotalUniq = @TotalUniq;
+   SET vTotalNonR = @TotalNonR;
+   SET vTotalMt = @TotalMt;
+   
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, total) values (''', p_trandate ,''',''sun'',''hits'',', vPostHits, ',', vTotalHits-vPostHits, ',', vTotalHits, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, total) values (''', p_trandate ,''',''sun'',''uniq_charged'',', vPostUniq, ',', vTotalUniq-vPostUniq, ',', vTotalUniq, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, total) values (''', p_trandate ,''',''sun'',''uniq_nonreg'',', vPostNonR, ',', vTotalNonR-vPostNonR, ',', vTotalNonR, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+   SET @vSql = concat('insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, total) values (''', p_trandate ,''',''sun'',''mt'',', vPostMt, ',', vTotalMt-vPostMt, ',', vTotalMt, ')');
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+   
+   SELECT 'Sun' Carrier, vTotalHits, vTotalUniq, vTotalNonR, vTotalMt;
+
+
+end;
+//
+
+delimiter ;
+
+
+
+
+
+
+
+
+
+
+##### RUNS @CARTMAN (now @VEGA)     
+##### RUNS @CARTMAN (now @VEGA)
+##### RUNS @CARTMAN (now @VEGA)
+
+
+
+CREATE TABLE ctmv6_stats_dtl (
+  tran_dt date NOT NULL,
+  carrier varchar(30) NOT NULL,
+  type varchar(30) NOT NULL,
+  post int(8) NOT NULL DEFAULT 0,
+  pre int(8) NOT NULL DEFAULT 0,
+  tm_tnt int(8) NOT NULL DEFAULT 0,
+  tat_bro int(8) NOT NULL DEFAULT 0,
+  others int(8) NOT NULL DEFAULT 0,
+  total int default 0,
+  PRIMARY KEY (tran_dt,carrier,type)
+);
+
+delimiter //
+DROP PROCEDURE sp_ctmv6_generate_stats//
+CREATE PROCEDURE sp_ctmv6_generate_stats()
+begin
+   truncate table ctmv6_stats_log; 
+   
+   insert into ctmv6_stats_log select reg_date, 'globe' carrier, 'reg_carrier' type, count(1) post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='GLOBE' and msisdn_type = 'POSTPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'globe', 'reg_carrier', 0 post, count(1) pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='GLOBE' and msisdn_type = 'PREPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'globe', 'reg_carrier', 0 post, 0 pre, count(1) tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='GLOBE' and msisdn_type = 'TM' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'globe', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='GLOBE' group by 1,2,3;
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day) reg_date, 'globe', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select reg_date, 'smart', 'reg_carrier', count(1) post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='SMART' and msisdn_type = 'POSTPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'smart', 'reg_carrier', 0 post, count(1) pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='SMART' and msisdn_type = 'PREPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'smart', 'reg_carrier', 0 post, 0 pre, count(1) tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='SMART' and msisdn_type = 'TNT' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'smart', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='SMART' group by 1,2,3;
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day) reg_date, 'smart', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select reg_date, 'sun', 'reg_carrier', count(1) post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='SUN' and msisdn_type = 'POSTPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'sun', 'reg_carrier', 0 post, count(1) pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='SUN' and msisdn_type = 'PREPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'sun', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and msisdn_carrier='SUN' group by 1,2,3;
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day) reg_date, 'sun', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select reg_date, reg_app, 'reg_sn', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and reg_app is not null group by 1,2,3;
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day), 'facebook', 'reg_sn', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day), 'googleplus', 'reg_sn', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day), 'linkedin', 'reg_sn', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day), 'twitter', 'reg_sn', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select reg_date, country, 'reg_country', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and country is not null group by 1,2,3;
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day), operator, 'reg_country', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from mobile_pattern where operator <> 'SMART' and operator <> 'SUN' and operator <> 'GLOBE' group by operator;
+   insert into ctmv6_stats_log select reg_date, reg_src, 'reg_device', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = date_sub(curdate(), interval 1 day) and reg_src is not null group by 1,2,3;   
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day), 'android', 'reg_device', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day), 'ios', 'reg_device', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select date_sub(curdate(), interval 1 day), 'web', 'reg_device', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+
+   insert ignore into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, others, total) 
+   select tran_dt, carrier, type, sum(post), sum(pre), sum(tm_tnt), sum(tat_bro), sum(others), sum(total) from ctmv6_stats_log group by 1,2,3;
+
+   delete from  ctmv6_stats_dtl where tran_dt = date_sub(curdate(), interval 1 day) and type = 'reg_country' and carrier='PHILIPPINES';
+   insert ignore into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, others, total) 
+   select tran_dt, 'PHILIPPINES', 'reg_country', 0, 0, 0, 0, 0, sum(total) from ctmv6_stats_log where tran_dt=date_sub(curdate(), interval 1 day) and type='reg_carrier' group by 1,2,3;
+
+end;
+//
+delimiter ;
+
+grant select on ctmv6.ctmv6_stats_dtl to ctmv6@10.100.1.4 identified by 'ctmv6';
+grant select on ctmv6.ctmv6_stats_log to ctmv6@10.100.1.4;
+grant execute on procedure ctmv6.sp_ctmv6_generate_stats to ctmv6@10.100.1.4;
+grant execute on procedure ctmv6.sp_ctmv6_generate_stats to ctmv6@localhost identified by 'ctmv6';
+flush privileges;
+
+delimiter //
+DROP PROCEDURE sp_ctmv6_regenerate_stats//
+CREATE PROCEDURE sp_ctmv6_regenerate_stats(p_trandate varchar(10))
+begin
+   truncate table ctmv6_stats_log; 
+
+   insert into ctmv6_stats_log select reg_date, 'globe' carrier, 'reg_carrier' type, count(1) post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = p_trandate and msisdn_carrier='GLOBE' and msisdn_type = 'POSTPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'globe', 'reg_carrier', 0 post, count(1) pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = p_trandate and msisdn_carrier='GLOBE' and msisdn_type = 'PREPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'globe', 'reg_carrier', 0 post, 0 pre, count(1) tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = p_trandate and msisdn_carrier='GLOBE' and msisdn_type = 'TM' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'globe', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = p_trandate and msisdn_carrier='GLOBE' group by 1,2,3;
+   insert into ctmv6_stats_log select p_trandate, 'globe', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total ;
+   insert into ctmv6_stats_log select reg_date, 'smart', 'reg_carrier', count(1) post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = p_trandate and msisdn_carrier='SMART' and msisdn_type = 'POSTPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'smart', 'reg_carrier', 0 post, count(1) pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = p_trandate and msisdn_carrier='SMART' and msisdn_type = 'PREPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'smart', 'reg_carrier', 0 post, 0 pre, count(1) tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = p_trandate and msisdn_carrier='SMART' and msisdn_type = 'TNT' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'smart', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = p_trandate and msisdn_carrier='SMART' group by 1,2,3;
+   insert into ctmv6_stats_log select p_trandate, 'smart', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total ;
+   insert into ctmv6_stats_log select reg_date, 'sun', 'reg_carrier', count(1) post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = p_trandate and msisdn_carrier='SUN' and msisdn_type = 'POSTPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'sun', 'reg_carrier', 0 post, count(1) pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from ctm_registration where reg_date = p_trandate and msisdn_carrier='SUN' and msisdn_type = 'PREPAID' group by 1,2,3;
+   insert into ctmv6_stats_log select reg_date, 'sun', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = p_trandate and msisdn_carrier='SUN' group by 1,2,3;
+   insert into ctmv6_stats_log select p_trandate, 'sun', 'reg_carrier', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select reg_date, reg_app, 'reg_sn', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = p_trandate and reg_app is not null group by 1,2,3;
+   insert into ctmv6_stats_log select p_trandate, 'facebook', 'reg_sn', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select p_trandate, 'googleplus', 'reg_sn', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select p_trandate, 'linkedin', 'reg_sn', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select p_trandate, 'twitter', 'reg_sn', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select reg_date, country, 'reg_country', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = p_trandate and country is not null group by 1,2,3;
+   insert into ctmv6_stats_log select p_trandate, operator, 'reg_country', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total from mobile_pattern where operator <> 'SMART' and operator <> 'SUN' and operator <> 'GLOBE' group by operator;
+   insert into ctmv6_stats_log select reg_date, reg_src, 'reg_device', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, count(1) total from ctm_registration where reg_date = p_trandate and reg_src is not null group by 1,2,3;
+   insert into ctmv6_stats_log select p_trandate, 'android', 'reg_device', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select p_trandate, 'ios', 'reg_device', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+   insert into ctmv6_stats_log select p_trandate, 'web', 'reg_device', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total;
+
+   insert ignore into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, others, total) 
+   select tran_dt, carrier, type, sum(post), sum(pre), sum(tm_tnt), sum(tat_bro), sum(others), sum(total) from ctmv6_stats_log group by 1,2,3;
+
+
+end;
+//
+delimiter ;
+
+
+
+##### RUNS @ARSENIC
+##### RUNS @ARSENIC
+##### RUNS @ARSENIC
+
+
+
+CREATE TABLE ctmv6_stats_dtl (
+  tran_dt date NOT NULL,
+  carrier varchar(30) NOT NULL,
+  type varchar(30) NOT NULL,
+  post int(8) NOT NULL DEFAULT 0,
+  pre int(8) NOT NULL DEFAULT 0,
+  tm_tnt int(8) NOT NULL DEFAULT 0,
+  tat_bro int(8) NOT NULL DEFAULT 0,
+  others int(8) NOT NULL DEFAULT 0,
+  total int default 0,
+  PRIMARY KEY (tran_dt,carrier,type)
+);
+
+delimiter //
+DROP PROCEDURE sp_ctmv6_generate_stats//
+CREATE PROCEDURE sp_ctmv6_generate_stats()
+begin
+   insert ignore into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, others, total) 
+   select datein, src, type, sum(post), sum(pre), sum(tm_tnt), sum(tat_bro), sum(others), sum(total) from (
+   select datein, CASE WHEN src='-an' THEN 'android' 
+                       WHEN src='ios' THEN 'ios'  
+                       WHEN src='web' THEN 'web'  
+                       ELSE 'others'
+                  END src, 'login' type, 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, count(1) others, 0 total from dmp_applogs_logins where datein = date_sub(curdate(), interval 1 day) group by 1,2,3 union
+   select date_sub(curdate(), interval 1 day), 'android', 'login', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total union
+   select date_sub(curdate(), interval 1 day), 'ios', 'login', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total union
+   select date_sub(curdate(), interval 1 day), 'web', 'login', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total union
+   select date_sub(curdate(), interval 1 day), 'others', 'login', 0 post, 0 pre, 0 tm_tnt, 0 tat_bro, 0 others, 0 total ) t1 group by 1,2,3;
+end;
+//
+delimiter ;
+
+
+grant select on ctmv6_logs.ctmv6_stats_dtl to ctmv6@10.100.1.4 identified by 'ctmv6';
+grant execute on ctmv6_logs.* to ctmv6@10.100.1.4 identified by 'ctmv6';
+flush privileges;
+
+
+
+GRANT EXECUTE ON PROCEDURE `test`.`sp_generate_ctmv6_stats_csg` TO 'db_monitor'@'localhost'\;
+flush privileges;

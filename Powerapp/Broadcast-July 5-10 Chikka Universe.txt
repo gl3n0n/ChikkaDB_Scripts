@@ -1,0 +1,500 @@
+SERVER: DB-REPLICA (archive_powerapp_flu)
+
+Bong - 639474296630
+Rica - 639399369648
+Victor-639188039134
+       639188882728
+       639188088585
+Jefte- 639189087704      
+
+   set session tmp_table_size = 268435456;
+   set session max_heap_table_size = 268435456;
+   set session sort_buffer_size = 104857600;
+   set session read_buffer_size = 8388608;
+
+
+delete from chikka_mins_uniq where phone like '63947337%';
+delete from chikka_mins_uniq where phone like '63919220%';
+delete from chikka_mins_uniq where phone like '63918337%'; 
+Plus this MIN: 639493638683 
+delete from chikka_mins_uniq where phone = '639493638683';
+update chikka_mins_uniq set bcasted=1 where exists (select 1 from powerapp_flu.new_subscribers b where chikka_mins_uniq.phone= b.phone);
+update chikka_mins_uniq set bcasted=2 where exists (select 1 from tmp_pisonet_bcast b where chikka_mins_uniq.phone= b.phone);
+
+truncate table tmp_plan_users;
+insert into tmp_plan_users select phone, brand, 'FACEBOOK', '2014-08-30', 'chikka' from chikka_mins_uniq a 
+where brand='TNT' and bcasted=0
+and not exists (select 1 from tmp_plan_users_0827 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0828 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0829 b where a.phone = b.phone) 
+order by rand() desc limit 1250000;
+
+insert into tmp_plan_users select phone, 'BUDDY', 'FACEBOOK', '2014-08-30', 'chikka' from chikka_mins_uniq a 
+where brand='PREPAID' and bcasted=0
+and not exists (select 1 from tmp_plan_users_0827 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0828 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0829 b where a.phone = b.phone) 
+order by rand() desc limit 1250000;
+select bcast_dt, plan, brand, count(1) from tmp_plan_users group by 1,2,3;
+
+select phone into outfile '/tmp/TNT_20140830.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'TNT';
+select phone into outfile '/tmp/BUDDY_20140830.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'BUDDY';
+create table tmp_plan_users_0830 like tmp_plan_users;
+insert into tmp_plan_users_0830 select * from tmp_plan_users;
+select bcast_dt, plan, brand, source, count(1) from tmp_plan_users_0830 group by 1,2,3,4;
+
+scp noc@172.17.250.40:/tmp/*20140829.csv /tmp/.
+scp /tmp/*20140829.csv noc@172.17.250.158:/tmp/.
+cd /var/www/html/scripts/5555-powerapp/bcast
+mv /tmp/*20140829.csv .
+vi *20140829.csv
+639474296630
+639399369648
+639188039134
+639188882728
+639188088585
+639189087704
+sort *20140828.csv | uniq | wc -l
+head *20140828.csv
+
+
+select phone into outfile '/tmp/FREE_SOCIAL_20140515.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-15' and datein < '2014-05-16' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140516.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-16' and datein < '2014-05-17' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140517.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-17' and datein < '2014-05-18' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140518.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-18' and datein < '2014-05-19' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140519.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-19' and datein < '2014-05-20' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140520.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-20' and datein < '2014-05-21' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140521.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-21' and datein < '2014-05-22' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140522.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-22' and datein < '2014-05-23' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140523.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-23' and datein < '2014-05-24' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140524.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-24' and datein < '2014-05-25' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140525.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-25' and datein < '2014-05-26' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140526.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-26' and datein < '2014-05-27' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140527.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-27' and datein < '2014-05-28' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140528.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-28' and datein < '2014-05-29' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140529.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-29' and datein < '2014-05-30' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140530.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-30' and datein < '2014-05-31' and plan='FREE_SOCIAL' and free='false' group by phone;
+select phone into outfile '/tmp/FREE_SOCIAL_20140531.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-31' and datein < '2014-06-01' and plan='FREE_SOCIAL' and free='false' group by phone;
+
+
+select left(datein,10) Date, phone into outfile '/tmp/FREE_SOCIAL_May.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-05-15' and datein < '2014-06-01' and plan='FREE_SOCIAL' and free='false' group by 1,2;
+select left(datein,10) Date, phone into outfile '/tmp/FREE_SOCIAL_June.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-06-01' and datein < '2014-07-01' and plan='FREE_SOCIAL' and free='false' group by 1,2;
+select left(datein,10) Date, phone into outfile '/tmp/FREE_SOCIAL_July.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-07-01' and datein < '2014-08-01' and plan='FREE_SOCIAL' and free='false' group by 1,2;
+select left(datein,10) Date, phone into outfile '/tmp/FREE_SOCIAL_Aug.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-08-01' and datein < '2014-08-27' and plan='FREE_SOCIAL' and free='false' group by 1,2;
+select left(datein,10) Date, phone powerapp_log where datein >= '2014-05-15' and datein < '2014-08-27' and plan='FREE_SOCIAL' and free='false' group by 1,2;
+
+
+
+
+
+
+drop table if exists tmp_plan_users;
+create table tmp_plan_users (phone varchar(12) not null, plan varchar(20) not null, last_buy datetime, primary key (phone));
+create temporary table tmp_plan_active_users (phone varchar(12) not null, primary key (phone));
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from powerapp_flu.powerapp_log where plan = 'PHOTO' and brand='BUDDY' and datein >= '2014-07-05' group by phone;
+insert ignore into tmp_plan_users select phone, plan, max(datein) from powerapp_log a where plan='PHOTO' and brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) group by phone,plan;
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from powerapp_flu.powerapp_log where plan = 'EMAIL' and brand='BUDDY' and datein >= '2014-07-05' group by phone;
+insert ignore into tmp_plan_users select phone, plan, max(datein) from powerapp_log a where plan='EMAIL' and brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) group by phone,plan;
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from powerapp_flu.powerapp_log where plan = 'CHAT' and brand='BUDDY' and datein >= '2014-07-05' group by phone;
+insert ignore into tmp_plan_users select phone, plan, max(datein) from powerapp_log a where plan='CHAT' and brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) group by phone,plan;
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from powerapp_flu.powerapp_log where plan = 'SOCIAL' and brand='BUDDY' and datein >= '2014-07-05' group by phone;
+insert ignore into tmp_plan_users select phone, plan, max(datein) from powerapp_log a where plan='SOCIAL' and brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) group by phone,plan;
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from powerapp_flu.powerapp_log where plan = 'UNLI' and brand='BUDDY' and datein >= '2014-07-05' group by phone;
+insert ignore into tmp_plan_users select phone, plan, max(datein) from powerapp_log a where plan='UNLI' and brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) group by phone,plan;
+
+call sp_generate_inactive_list();
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from tmp_plan_users;
+insert into tmp_plan_users select phone, 'SCHOOL', now() from powerapp_inactive_list a where brand='BUDDY' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone);
+
+select phone into outfile '/tmp/PHOTO_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'PHOTO';
+select phone into outfile '/tmp/EMAIL_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'EMAIL';
+select phone into outfile '/tmp/CHAT_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'CHAT';
+select phone into outfile '/tmp/SOCIAL_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'SOCIAL';
+select phone into outfile '/tmp/UNLI_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'UNLI';
+select phone into outfile '/tmp/SCHOOL_20140705.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'SCHOOL';
+
+CREATE TABLE chikka_universe (
+  phone varchar(12) NOT NULL,
+  access_code varchar(6) NOT NULL DEFAULT '',
+  service varchar(20) NOT NULL DEFAULT '',
+  datein datetime DEFAULT NULL,
+  brand varchar(12) DEFAULT NULL,
+  PRIMARY KEY (phone,access_code,service)
+);
+
+CREATE TABLE chikka_mins_uniq (
+  phone varchar(12) NOT NULL,
+  brand varchar(12) NOT NULL,
+  PRIMARY KEY (phone)
+); 
+load data local infile '/tmp/smartbase__20140709.sql' into table chikka_universe fields terminated by '\t';
+insert ignore into chikka_mins_uniq select phone, max(brand) from chikka_universe group  by phone;
+
+create table tmp_plan_users_0706 like tmp_plan_users;
+insert into tmp_plan_users_0706 select * from tmp_plan_users;
+truncate table tmp_plan_users;
+
+create table tmp_plan_users_0709 like tmp_plan_users;
+insert into tmp_plan_users_0709 select * from tmp_plan_users;
+truncate table tmp_plan_users;
+
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from tmp_plan_users;
+insert into tmp_plan_users select phone, 'CHIKKA-PRE', now(), '2014-07-10' from chikka_mins_uniq a where brand='PREPAID' 
+and not exists (select 1 from tmp_plan_users_0705 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0706 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0707 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0709 b where a.phone = b.phone) 
+limit 2000000;
+--and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) 
+
+truncate table tmp_plan_active_users;
+insert into tmp_plan_active_users select phone from tmp_plan_users;
+insert into tmp_plan_users select phone, 'CHIKKA-TNT', now(), '2014-07-07' from chikka_mins_uniq a where brand='TNT' 
+and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0705 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0706 b where a.phone = b.phone) 
+limit 1000000;
+
+select phone into outfile '/tmp/BUDDY_20140710.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'CHIKKA-PRE';
+select phone into outfile '/tmp/TNT_20140707.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'CHIKKA-TNT';
+select phone into outfile '/tmp/BUDDY_20140710.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'CHIKKA-PRE';
+
+scp noc@172.17.250.40:/tmp/BUDDY_20140715a.csv /tmp/.
+scp /tmp/*_20140715a_20140730.csv noc@172.17.250.158:/tmp/.
+
+cd /var/www/html/scripts/5555-powerapp/bcast
+
+
+
+
+
+
+insert into tmp_plan_users select phone, brand, now(), '2014-07-12' from chikka_mins_uniq a where not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) 
+insert into tmp_plan_users select phone, 'PREPAID', now(), '2014-07-12' from tmp_plan_users_0706 where plan = 'CHIKKA-PRE' limit 983527;
+insert into tmp_plan_users select phone, 'TNT', now(), '2014-07-12' from tmp_plan_users_0706 where plan = 'CHIKKA-TNT' limit 961951;
+select phone into outfile '/tmp/TNT_20140712.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'TNT';
+select phone into outfile '/tmp/BUDDY_20140712.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'PREPAID';
+
+
+insert ignore into tmp_plan_active_users select phone from tmp_plan_users; 
+insert into tmp_plan_users select phone, 'PREPAID', now(), '2014-07-13' from tmp_plan_users_0706 a where plan = 'CHIKKA-PRE' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) ;
+insert into tmp_plan_users select phone, 'TNT', now(), '2014-07-13' from tmp_plan_users_0706 a where plan = 'CHIKKA-TNT' and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) ;
+select bcast_dt, plan, count(1) from tmp_plan_users group by 1,2;
+insert into tmp_plan_users select phone, 'PREPAID', now(), '2014-07-13' from tmp_plan_users_0705 where plan = 'CHIKKA-PRE' limit 983527;
+insert into tmp_plan_users select phone, 'TNT', now(), '2014-07-13' from tmp_plan_users_0705 where plan = 'CHIKKA-TNT' limit 961951;
+select phone into outfile '/tmp/TNT_20140713a.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'TNT';
+select phone into outfile '/tmp/BUDDY_20140713a.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'PREPAID';
+
+insert into tmp_plan_users select phone, brand, now(), '2014-07-18' from chikka_mins_uniq a where brand='PREPAID' 
+and not exists (select 1 from tmp_plan_users_0705 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0706 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0717 b where a.phone = b.phone) 
+limit 1510908;
+
+select phone into outfile '/tmp/BUDDY_20140718.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'PREPAID' and bcast_dt='2014-07-18';
+select phone into outfile '/tmp/BUDDY_20140719.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'PREPAID' and bcast_dt='2014-07-19';
+
+insert into tmp_plan_users select phone, brand, now(), '2014-07-15' from chikka_mins_uniq a where brand='TNT' 
+and not exists (select 1 from tmp_plan_users_0712 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0713 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0714 b where a.phone = b.phone) 
+limit 1000000;
+select phone into outfile '/tmp/TNT_20140715.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'TNT';
+select phone into outfile '/tmp/BUDDY_20140715.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'PREPAID';
+
+
+
++--------+----------+      +--------+----------+
+| prefix | count(1) |      | Brand  | count(1) |
++--------+----------+      +--------+----------+
+| 63908  |      290 |      | BUDDY  |  5378027 |
+| 63910  |       74 |      | POSTPD |    89507 |
+| 63918  |      239 |      | TNT    |  5351631 |
+| 63919  |     1647 |      +--------+----------+
+| 63920  |       95 |      | NULL   |   420950 |
+| 63921  |     6327 |      +--------+----------+
+| 63928  |    43235 |
+| 63929  |     6602 |
+| 63939  |   105221 |
+| 63946  |     3754 |
+| 63947  |    13820 |
+| 63948  |    53507 |
+| 63949  |   101354 |
+| 63955  |        1 |
+| 63998  |    29876 |
+| 63999  |    54908 |
++--------+----------+
+
+insert into tmp_plan_users select phone, brand, now(), '2014-07-19' from tmp_hider a where brand='TNT' limit 2000000;
+insert into tmp_plan_users select phone, brand, now(), '2014-07-19' from tmp_hider a where brand='TNT' 
+and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) 
+limit 1657865;
+select phone into outfile '/tmp/TNT_20140719.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_0719 where plan = 'TNT';
+
+insert into tmp_plan_users select phone, brand, now(), '2014-07-20' from tmp_hider a where brand='BUDDY' order by date_created desc
+limit 2000000;
+select phone into outfile '/tmp/BUDDY_20140720.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'BUDDY';
+
+
+
+truncate table tmp_plan_users;
+insert into tmp_plan_users select phone, brand, now(), '2014-07-29' from tmp_hider a where brand='TNT' order by date_created desc limit 500000;
+insert into tmp_plan_users select phone, brand, now(), '2014-07-29' from tmp_hider a where brand='BUDDY' order by date_created desc limit 1500000;
+
+select phone into outfile '/tmp/TNT_20140729.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'TNT';
+select phone into outfile '/tmp/BUDDY_20140729.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'BUDDY';
+
+
+truncate table tmp_plan_users;
+insert into tmp_plan_users select phone, brand, now(), '2014-08-03' from tmp_hider a where brand='TNT' 
+and not exists (select 1 from tmp_plan_users_0729 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0730 b where a.phone= b.phone)   
+and not exists (select 1 from tmp_plan_users_0731 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0801 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0802 b where a.phone= b.phone) order by date_created desc limit 1000000;
+insert into tmp_plan_users select phone, brand, now(), '2014-08-03' from tmp_hider a where brand='BUDDY'  
+and not exists (select 1 from tmp_plan_users_0729 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0730 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0731 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0801 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0802 b where a.phone= b.phone) order by date_created desc limit 1000000;
+
+insert into tmp_plan_users select phone, brand, now(), '2014-08-06' from chikka_mins_uniq a 
+where brand='TNT' and (phone not like '63947337%' and phone not like '63919220%' and phone not like '63918337%')
+and not exists (select 1 from tmp_plan_users b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0729 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0730 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0731 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0801 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0802 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0803 b where a.phone= b.phone)
+and not exists (select 1 from tmp_plan_users_0804 b where a.phone= b.phone)
+and not exists (select 1 from tmp_plan_users_0805 b where a.phone= b.phone) order by rand() limit 1000000;
+insert into tmp_plan_users select phone, brand, now(), '2014-08-05' from chikka_mins_uniq a 
+where brand='PREPAID' and (phone not like '63947337%' and phone not like '63919220%' and phone not like '63918337%')
+and not exists (select 1 from tmp_plan_users b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0729 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0730 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0731 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0801 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0802 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0803 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0804 b where a.phone= b.phone)  
+and not exists (select 1 from tmp_plan_users_0805 b where a.phone= b.phone)
+and not exists (select 1 from tmp_plan_users_0805 b where a.phone= b.phone)
+and not exists (select 1 from tmp_plan_users_0806 b where a.phone= b.phone) order by rand() limit 1000000;
+
+select bcast_dt, plan, count(1) from tmp_plan_users group by 1,2;
+
+select phone into outfile '/tmp/TNT_20140806.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'TNT';
+select phone into outfile '/tmp/BUDDY_20140806.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan <> 'TNT';
+select phone into outfile '/tmp/TNT_20140805.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_0802 where plan = 'TNT';
+select phone into outfile '/tmp/BUDDY_20140805.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_0802 where plan <> 'TNT';
+
+
+select '2014-08-03', '2014-08-04' into @tran_dt,@tran_nw;
+select count(distinct phone) NumUniq30d from powerapp_log where datein >= date_sub(@tran_dt, interval 30 day) and datein < @tran_nw;
+update powerapp_dailyrep set num_uniq_30d=593360 where tran_dt = '2014-08-01';
+update powerapp_dailyrep set num_uniq_30d=607394 where tran_dt = '2014-08-02';
+update powerapp_dailyrep set num_uniq_30d=622593 where tran_dt = '2014-08-03';
+update powerapp_dailyrep set num_uniq_30d=636823 where tran_dt = '2014-08-04';
+truncate table tmp_plan_users;
+insert into tmp_plan_users select phone, brand, now(), '2014-07-24' from chikka_universe a where brand='PREPAID' order by datein desc
+limit 2000000;
+select phone into outfile '/tmp/BUDDY_20140724.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'PREPAID';
+
+truncate table tmp_plan_users;
+insert into tmp_plan_users select phone, brand, now(), '2014-07-25' from chikka_mins_uniq a where brand='TNT' limit 2000000;
+select phone into outfile '/tmp/TNT_20140725.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'TNT';
+
+
+insert into tmp_plan_active_users select phone from tmp_plan_users_0724;
+insert into tmp_plan_active_users select phone from tmp_plan_users_0725;
+insert into tmp_plan_active_users select phone from tmp_plan_users_0726;
+
+insert into tmp_plan_users select phone, brand, now(), '2014-07-27' from chikka_mins_uniq a where brand='TNT' 
+and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) limit 2000000;
+select phone into outfile '/tmp/TNT_20140726.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'TNT';
+
+insert into tmp_plan_users select phone, brand, now(), '2014-07-27' from chikka_mins_uniq a where brand='PREPAID'  
+and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) limit 2000000;
+select phone into outfile '/tmp/BUDDY_20140727.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'PREPAID';
+
+   set session tmp_table_size = 268435456;
+   set session max_heap_table_size = 268435456;
+   set session sort_buffer_size = 104857600;
+   set session read_buffer_size = 8388608;
+scp noc@172.17.250.40:/tmp/BUDDY_20140727.csv /tmp/.
+scp /tmp/BUDDY_20140727.csv noc@172.17.250.158:/tmp/.
+
+
+insert into tmp_plan_active_users select phone from powerapp_log where datein>'2014-07-11' and brand='BUDDY' group by phone;
+select plan, count(1) from tmp_plan_users a where exists (select 1 from tmp_plan_active_users b where a.phone=b.phone) group by 1;
+
+insert into tmp_plan_users select phone, brand, now(), '2014-07-15' from chikka_mins_uniq a where brand='PREPAID' 
+and not exists (select 1 from tmp_plan_active_users b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0712 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0713 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0714 b where a.phone = b.phone) 
+and not exists (select 1 from tmp_plan_users_0715 b where a.phone = b.phone) 
+limit 37295;
+
+
+insert into tmp_plan_users 
+select phone, brand, max(datein), '2014-07-16' from powerapp_log a where datein>='2014-01-01' and datein < '2014-05-16' and brand='BUDDY' and plan = 'SOCIAL'
+group by phone;
+insert ignore into tmp_plan_users 
+select phone, brand, max(datein), '2014-07-16' from powerapp_log a where datein>='2014-05-16' and brand='BUDDY' and plan = 'FREE_SOCIAL'
+group by phone;
+
+select phone into outfile '/tmp/BUDDY_20140716.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users;
+scp noc@172.17.250.40:/tmp/BUDDY_20140717.csv /tmp/.
+scp /tmp/BUDDY_20140717.csv noc@172.17.250.158:/tmp/.
+cd /var/www/html/scripts/5555-powerapp/bcast
+
+
+noc@api2-rx:~$ crontab -l
+@reboot nohup ./vmstat_with_time.sh &
+
+# * * * * * /opt/projects/powerapp_wap/powerapp/wap_always_up.sh
+#0 0 * * * /opt/projects/frontend_startup.sh > /dev/null 2<&1&
+0 0 * * * sh /opt/projects/scripts/backup-scripts/outrotate.sh > /dev/null 2>&1
+#logzipjem
+0 5 * * * sh /opt/projects/scripts/backup-scripts/logzip.sh > /dev/null 2>&1
+
+#spam bcast
+#0 8 19 6 * cd /var/www/html/scripts/5555-powerapp/;php spam_bcast.php; - ria
+#0 12 28 6 * cd /var/www/html/scripts/5555-powerapp/;php spam_piso.php; - ria
+#0 8 28,29 6 * cd /var/www/html/scripts/5555-powerapp/;php spam_smart.php; - ria
+0 8 11,12,13,14,15 7 * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_tnt.php;
+0 8 10,11,12,13,14,15 7 * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_buddy.php;
+#0 8 5,6 7 * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_postpaid.php;
+
+0 1 * * * cd /var/www/html/scripts/5555-powerapp/; php stats.php 1;
+
+0 8 * * * cd /home/noc/ps_java; /opt/bin/python cal_stats.py;
+
+5 1 * * * cd /opt/scripts/devo; /opt/bin/python daily_stats.py;
+15 1 * * * cd /opt/scripts/devo; /opt/bin/python daily_stats_for_smart.py;
+0 2 * * * cd /opt/scripts/devo; /opt/bin/python hourly_stats_per_day.py;
+-----------------------------
+
+
+
++-------------------+----------+
+| service           | count(1) |
++-------------------+----------+
+| APPTIVATE         |        1 |
+| AQUARIUS          |       57 |
+| ARIES             |       70 |
+| BIBLE             |      111 |
+| BUDDYVAS          |     3972 |
+| CANCER            |       58 |
+| CAPRICORN         |       63 |
+| CASH              |        1 |
+| CC                |        6 |
+| chikker           |       95 |
+| collecttxt        |   253518 |
+| ctmv5             |  6384933 |
+| ctmv6             |   408671 |
+| CUBITS            |        2 |
+| DOG               |       16 |
+| DRAGON            |       14 |
+| FREE              |     1843 |
+| FSCOINS           |        5 |
+| GAMEX             |      137 |
+| GARENA            |       83 |
+| GC                |       20 |
+| GEMINI            |       43 |
+| HEART AQUARIUS    |        9 |
+| HEART ARIES       |       10 |
+| HEART CANCER      |       10 |
+| HEART CAPRICORN   |        6 |
+| HEART GEMINI      |        7 |
+| HEART LEO         |       10 |
+| HEART LIBRA       |       10 |
+| HEART PISCES      |        5 |
+| HEART SAGITTARIUS |        6 |
+| HEART SCORPIO     |        7 |
+| HEART TAURUS      |        7 |
+| HEART VIRGO       |       12 |
+| HORSE             |       10 |
+| Infoboard         |   196770 |
+| KILIG             |      141 |
+| LAB               |      156 |
+| LEO               |       58 |
+| LIBRA             |       43 |
+| LU                |       18 |
+| LUCK              |       12 |
+| LUV               |      474 |
+| MARY              |       31 |
+| MCOINS            |       13 |
+| MERALCO7622       |        6 |
+| mobads            |   191394 |
+| MOL               |       74 |
+| MONKEY            |        4 |
+| netcast3          |   653755 |
+| NUM               |       45 |
+| ORIG              |       84 |
+| OX                |       20 |
+| PERA              |      123 |
+| PIG               |       12 |
+| PINOY             |       63 |
+| PISCES            |       38 |
+| PNCC              |        1 |
+| QUOTES            |        4 |
+| RABBIT            |        6 |
+| radyo5            |     5395 |
+| RAT               |       13 |
+| ROOSTER           |        7 |
+| SAGITTARIUS       |       44 |
+| SAMSUNG           |       20 |
+| SANTO             |       43 |
+| SCORPIO           |       62 |
+| SEVEN             |     3924 |
+| SHEEP             |       11 |
+| SNAKE             |       14 |
+| STEAM             |       10 |
+| TAURUS            |       61 |
+| TAWA              |       29 |
+| TEKSAKTO          |      185 |
+| TIGER             |        6 |
+| TIPID             |      140 |
+| TNT               |   326959 |
+| VIRGO             |       63 |
+| yesdb             |  1770653 |
++-------------------+----------+
+79 rows in set (10.53 sec)
+
+mysql> select brand, count(1) from chikka_mins_uniq group by 1;
++----------+----------+
+| brand    | count(1) |
++----------+----------+
+| POSTPAID |   260125 |
+| PREPAID  |  5820438 |
+| TNT      |  3724772 |
++----------+----------+
+3 rows in set (4.42 sec)
+
+mysql> select count(1) from chikka_mins_uniq;
++----------+
+| count(1) |
++----------+
+|  9805335 |
++----------+
+1 row in set (0.00 sec)
+
+
