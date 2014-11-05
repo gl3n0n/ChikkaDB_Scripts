@@ -81,15 +81,24 @@ from   tmp_powerapp_hourly where t_usage > 0;
 
 select tx_date, left(start_tm,2) tx_hh, count(distinct phone) uniq, sum(b_usage) b_usage, sum(time_to_sec(timediff(end_tm,start_tm))) t_time from powerapp_udr_log where service = 'MyvolumeService' group by 1,2;
 
+
+insert ignore into tmp_liberation_mins select phone, max(brand), min(datein) from powerapp_log where datein >= '2014-10-30' and plan = 'MYVOLUME' group by 1;
+
+
 select txDate, sum(BUDDY) BUDDY, sum(POSTPD) POSTPD, sum(TNT) TNT from (
-select left(datein,10) txDate, count(distinct phone) BUDDY, 0 POSTPD, 0 TNT from powerapp_log where datein >= '2014-09-26' and datein < curdate() and plan='MYVOLUME' and brand='BUDDY' group by 1 union
-select left(datein,10) txDate, 0 BUDDY, count(distinct phone) POSTPD, 0 TNT from powerapp_log where datein >= '2014-09-26' and datein < curdate() and plan='MYVOLUME' and brand='POSTPD' group by 1 union
-select left(datein,10) txDate, 0 BUDDY, 0 POSTPD, count(distinct phone) TNT from powerapp_log where datein >= '2014-09-26' and datein < curdate() and plan='MYVOLUME' and brand='TNT' group by 1
+select left(datein,10) txDate, count(distinct phone) BUDDY, 0 POSTPD, 0 TNT from powerapp_log where datein >= '2014-10-26' and datein < curdate() and plan='MYVOLUME' and brand='BUDDY' group by 1 union
+select left(datein,10) txDate, 0 BUDDY, count(distinct phone) POSTPD, 0 TNT from powerapp_log where datein >= '2014-10-26' and datein < curdate() and plan='MYVOLUME' and brand='POSTPD' group by 1 union
+select left(datein,10) txDate, 0 BUDDY, 0 POSTPD, count(distinct phone) TNT from powerapp_log where datein >= '2014-10-26' and datein < curdate() and plan='MYVOLUME' and brand='TNT' group by 1
 ) t group by 1;
 
+select txDate, sum(BUDDY) BUDDY, sum(POSTPD) POSTPD, sum(TNT) TNT from (
+select left(datein,10) txDate, count(distinct phone) BUDDY, 0 POSTPD, 0 TNT from tmp_liberation_mins where datein >= '2014-10-26' and datein < curdate() and brand='BUDDY' group by 1 union
+select left(datein,10) txDate, 0 BUDDY, count(distinct phone) POSTPD, 0 TNT from tmp_liberation_mins where datein >= '2014-10-26' and datein < curdate() and brand='POSTPD' group by 1 union
+select left(datein,10) txDate, 0 BUDDY, 0 POSTPD, count(distinct phone) TNT from tmp_liberation_mins where datein >= '2014-10-26' and datein < curdate() and brand='TNT' group by 1
+) t group by 1;
 
-
-
+AUTO RENEWAL
+select left(datein,10) txDate, count(distinct phone) uniq from powerapp_log where datein >= '2014-10-22' and plan = 'MYVOLUME' and source like 'auto%' and brand= 'TNT' group by 1;
 
 select week(datein) Week_No, 
        date_add(left(datein,10), INTERVAL(1-DAYOFWEEK(left(datein,10))) DAY) Start_Dt, 
@@ -274,7 +283,7 @@ select brand Brand, count(distinct phone) from powerapp_log where plan = 'MYVOLU
 create table tmp_liberation_mins (phone varchar(12) not null, brand varchar(20), primary key (phone));
 create table tmp_users_new (phone varchar(12), primary key (phone));
 
-insert into tmp_liberation_mins select phone, max(brand) from powerapp_log where datein >= '2014-09-26' and plan = 'MYVOLUME' group by 1;
+insert ignore into tmp_liberation_mins select phone, max(brand), min(datein) from powerapp_log where datein >= '2014-10-26' and plan = 'MYVOLUME' group by 1;
 insert into tmp_users_new select phone from powerapp_log where datein >= '2014-09-26' and plan <> 'MYVOLUME' group by 1;
 
 select count from tmp_liberation_mins a where exists (select 1 from tmp_users_new b where a.phone=b.phone);
@@ -397,3 +406,15 @@ select brand, count(distinct phone) from powerapp_log a where datein >= '2014-09
 
 
 
+
+
+
+insert ignore into tmp_liberation_mins select phone, max(brand), min(datein) from powerapp_log where datein >= '2014-10-26' and plan = 'MYVOLUME' group by 1;
+select brand, count(distinct phone) from powerapp_log a where datein >= '2014-09-26' and datein < curdate() and exists (select 1 from tmp_liberation_mins b where a.phone=b.phone) group by brand;
+
+1. With Liberation package
+select count(1)  from powerapp_users_apn a, tmp_chikka_apn b where a.phone = b.phone and a.brand = 'TNT' and exists (select 1 from tmp_liberation_mins c where a.phone=c.phone);
+
+
+2. Didn't avail Liberation but in the Chikka APN 
+select count(1) from powerapp_users_apn a, tmp_chikka_apn b where a.phone = b.phone and a.brand = 'TNT' and not exists (select 1 from tmp_liberation_mins c where a.phone=c.phone);

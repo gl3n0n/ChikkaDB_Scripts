@@ -653,3 +653,18 @@ end;
 delimiter ;
 
 GRANT EXECUTE ON PROCEDURE `archive_powerapp_flu`.`sp_generate_udr_usage` TO 'stats'@'localhost';
+
+
+
+
+
+
+
+create table tmp_udr_report (phone varchar(12) not null, source varchar(20) not null, tx_time bigint(18) default 0, tx_usage bigint(18) default 0, primary key (phone, source));
+insert into tmp_udr_report select phone, source, sum(time_to_sec(timediff(end_tm,start_tm))) tx_time, sum(b_usage) tx_usage from powerapp_udr_log where tx_date='2014-10-22' group by phone, source;
+
+select phone, sum(tx_time)/60 tx_time_mi, sum(tx_usage)/1000000 tx_usage_mb, group_concat(concat(source,':',tx_time,':',tx_usage) separator ',') source 
+from tmp_udr_report
+order by 2 desc limit 20;
+
+

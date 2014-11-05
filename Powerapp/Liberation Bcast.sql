@@ -3,29 +3,49 @@ set session max_heap_table_size = 268435456;
 set session sort_buffer_size = 104857600;
 set session read_buffer_size = 8388608;
 
+639474296630
+639399369648
+639188039134
+639188882728
+639188088585
+639189087704
+
 
 CREATE TABLE tmp_liberation_mins (phone varchar(12) not null, brand varchar(20), primary key (phone));
 CREATE TABLE tmp_bcast_liberation_mins (phone varchar(12) not null, brand varchar(20) not null, user_type varchar(20) not null, primary key (phone));
 CREATE TABLE tmp_weekly_usage (phone varchar(12), datein date, brand varchar(20), hits int(11), primary key (phone, datein));
 
 
-truncate table tmp_liberation_mins;
-truncate table tmp_bcast_liberation_mins;
+-- truncate table tmp_liberation_mins;
 truncate table tmp_weekly_usage;
+truncate table tmp_bcast_liberation_mins;
 
-insert into tmp_liberation_mins select phone, max(brand) brand from powerapp_log where datein >= '2014-09-26' and plan = 'MYVOLUME' group by phone;
+insert ignore into tmp_liberation_mins select phone, max(brand) brand, min(datein) from powerapp_flu.powerapp_log where datein >= '2014-10-30' and plan = 'MYVOLUME' group by phone;
 insert into tmp_weekly_usage
-select phone, left(datein,10) date, max(brand), count(1) hits from powerapp_log where datein >= '2014-10-13' and datein < '2014-10-19' and plan <> 'MYVOLUME' group by 1,2;
+select phone, left(datein,10) date, max(brand), count(1) hits from powerapp_log where datein >= '2014-10-27' and plan <> 'MYVOLUME' group by 1,2;
 
-insert into tmp_bcast_liberation_mins select phone, max(brand), '5_7' from tmp_weekly_usage a where exists (select 1 from tmp_liberation_mins b where a.phone=b.phone) group by phone having count(1) >= 5;
-insert into tmp_bcast_liberation_mins select phone, max(brand), '3_4' from tmp_weekly_usage a where exists (select 1 from tmp_liberation_mins b where a.phone=b.phone) group by phone having count(1) between 3 and 4;
-insert into tmp_bcast_liberation_mins select phone, max(brand), '1_2' from tmp_weekly_usage a where exists (select 1 from tmp_liberation_mins b where a.phone=b.phone) group by phone having count(1) < 3;
+insert into tmp_bcast_liberation_mins select phone, max(brand), '5_7', 0 from tmp_weekly_usage a where exists (select 1 from tmp_liberation_mins b where a.phone=b.phone) group by phone having count(1) >= 5;
+insert into tmp_bcast_liberation_mins select phone, max(brand), '3_4', 0 from tmp_weekly_usage a where exists (select 1 from tmp_liberation_mins b where a.phone=b.phone) group by phone having count(1) between 3 and 4;
+insert into tmp_bcast_liberation_mins select phone, max(brand), '1_2', 0 from tmp_weekly_usage a where exists (select 1 from tmp_liberation_mins b where a.phone=b.phone) group by phone having count(1) < 3;
 
 
-select phone into outfile '/tmp/BUDDY_ACTIVE_1_20141020.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'BUDDY' and user_type= '3_4';
-select phone into outfile '/tmp/BUDDY_ACTIVE_2_20141020.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'BUDDY' and user_type= '5_7';
-select phone into outfile '/tmp/BUDDY_INACTIVE_20141020.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'BUDDY' and user_type= '1_2';
-select phone into outfile '/tmp/TNT_ACTIVE_1_20141020.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'TNT' and user_type= '3_4';
-select phone into outfile '/tmp/TNT_ACTIVE_2_20141020.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'TNT' and user_type= '5_7';
-select phone into outfile '/tmp/TNT_INACTIVE_20141020.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'TNT' and user_type= '1_2';
+select phone into outfile '/tmp/BUDDY_ACTIVE_1_20141101.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'BUDDY' and user_type= '3_4';
+select phone into outfile '/tmp/BUDDY_ACTIVE_2_20141101.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'BUDDY' and user_type= '5_7';
+select phone into outfile '/tmp/BUDDY_INACTIVE_20141101.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'BUDDY' and user_type= '1_2';
+select phone into outfile '/tmp/TNT_ACTIVE_1_20141101.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'TNT' and user_type= '3_4';
+select phone into outfile '/tmp/TNT_ACTIVE_2_20141101.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'TNT' and user_type= '5_7';
+select phone into outfile '/tmp/TNT_INACTIVE_20141101.csv' fields terminated by ',' lines terminated by '\n' from tmp_bcast_liberation_mins where brand = 'TNT' and user_type= '1_2';
+
+
+
+insert ignore into tmp_liberation_mins select phone, max(brand), min(datein) from powerapp_log where datein >= '2014-10-25' and plan = 'MYVOLUME' group by phone;
+-- current
+select brand, count(1) from tmp_liberation_mins a where datein > '2014-10-27' and datein < '2014-10-27' group by brand;
+-- lapsed
+select brand, count(1) from tmp_liberation_mins a where datein < '2014-10-20' and not exists (select 1 from tmp_weekly_usage b where a.phone=b.phone) group by brand;
+
+select phone into outfile '/tmp/BUDDY_CUR_20141101.csv' fields terminated by ',' lines terminated by '\n' from tmp_liberation_mins a where datein > '2014-10-27' and datein < '2014-11-01' and brand='BUDDY';
+select phone into outfile '/tmp/TNT_CUR_20141101.csv' fields terminated by ',' lines terminated by '\n' from tmp_liberation_mins where datein > '2014-10-27' and datein < '2014-11-01' and brand='TNT';
+select phone into outfile '/tmp/BUDDY_LAP_20141101.csv' fields terminated by ',' lines terminated by '\n' from tmp_liberation_mins a where datein >= '2014-10-20' and datein < '2014-10-27' and brand='BUDDY' and not exists (select 1 from tmp_weekly_usage b where a.phone=b.phone);
+select phone into outfile '/tmp/TNT_LAP_20141101.csv' fields terminated by ',' lines terminated by '\n' from tmp_liberation_mins a where datein >= '2014-10-20' and datein < '2014-10-27' and brand='TNT' and not exists (select 1 from tmp_weekly_usage b where a.phone=b.phone);
 

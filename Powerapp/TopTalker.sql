@@ -155,12 +155,21 @@ UDR Log
    group  by tx_date, phone, service
    having sum(b_usage) > 0;
 
-select tx_date, phone, sum(b_usage) b_usage from powerapp_udr_log 
-where   phone in ('639496650700', '639198713194', '639473863820',
-              '639298149416', '639468946160', '639293610182',
-              '639202485761', '639461936489', '639214639480',
-              '639993514862')
-group by tx_date, phone;
+select '2014-11-03' into @trandt;
+select phone, sum(b_usage) b_usage from powerapp_udr_log 
+where   phone in (
+ '639462918109',
+ '639207911610',
+ '639489015883',
+ '639072187753',
+ '639284046237',
+ '639468083894',
+ '639489416035',
+ '639306072409',
+ '639469270692',
+ '639995765500')
+and tx_date = @trandt
+group by phone;
 
 
 TOP 10 Talker
@@ -175,36 +184,36 @@ where tx_date = @trandt
 group by phone) t group by phone order by 2 desc limit 10;
 
 
-select '2014-10-18' into @trandt;
+select '2014-11-03' into @trandt;
 select phone, sum(b_usage) b_usage from ( 
 select phone, sum(b_usage) b_usage from powerapp_log 
 where datein >= @trandt and datein < date_add(@trandt, interval 1 day)
 and   phone in (
- '639297211232',
- '639494625940',
- '639074326963',
- '639287107421',
- '639078427318',
- '639198169122',
- '639104525862',
- '639193924892',
- '639288154373',
- '639995537825')
+ '639462918109',
+ '639207911610',
+ '639489015883',
+ '639072187753',
+ '639284046237',
+ '639468083894',
+ '639489416035',
+ '639306072409',
+ '639469270692',
+ '639995765500')
 group by phone
 union all
 select phone, sum(b_usage) b_usage from powerapp_whitelisted_log 
 where tx_date = @trandt
 and   phone in (
- '639297211232',
- '639494625940',
- '639074326963',
- '639287107421',
- '639078427318',
- '639198169122',
- '639104525862',
- '639193924892',
- '639288154373',
- '639995537825')
+ '639462918109',
+ '639207911610',
+ '639489015883',
+ '639072187753',
+ '639284046237',
+ '639468083894',
+ '639489416035',
+ '639306072409',
+ '639469270692',
+ '639995765500')
 group by phone) t group by phone order by 2 desc limit 10;
 
 select phone into outfile '/tmp/BUDDY_20141021.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'BUDDY' and plan = 'ALLDAY';
