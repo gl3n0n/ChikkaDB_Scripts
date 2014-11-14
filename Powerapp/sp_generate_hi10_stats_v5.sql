@@ -3,6 +3,11 @@ DROP PROCEDURE sp_regenerate_hi10_stats;
 delimiter //
 CREATE PROCEDURE sp_regenerate_hi10_stats(p_trandate date)
 begin
+    set session tmp_table_size = 268435456;
+    set session max_heap_table_size = 268435456;
+    set session sort_buffer_size = 104857600;
+    set session read_buffer_size = 8388608;
+
     SET @tran_dt = p_trandate;
     SET @tran_nw = date_add(p_trandate, interval 1 day);
     delete from powerapp_dailyrep where tran_dt = @tran_dt;
@@ -26,16 +31,31 @@ begin
     select count(1), count(distinct phone) into @piso_hits,        @piso_uniq        from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='PISONET';
     select count(1), count(distinct phone) into @school_hits,      @school_uniq      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='BACKTOSCHOOL';
     select count(1), count(distinct phone) into @coc_hits,         @coc_uniq         from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='CLASHOFCLANS';
-    select count(1), count(distinct phone) into @youtube_hits,     @youtube_uniq     from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE';
-    select count(1), count(distinct phone) into @total_hits,       @total_uniq       from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false';
+    select count(1), count(distinct phone) into @youtube_hits,     @youtube_uniq     from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE' and source <> 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @fy5_hits,         @fy5_uniq         from powerapp_log where datein >= @tran_dt and datein < @tran_nw and plan='YOUTUBE' and source = 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @myvolume_hits,    @myvolume_uniq    from powerapp_log where datein >= @tran_dt and datein < @tran_nw and plan='MYVOLUME';
 
+    select sum(IF(free='false',1,0)) into @total_hits from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false';
+    select count(distinct phone) into @total_uniq from (
+       select phone from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false'
+       union
+       select phone from powerapp_log where datein >= @tran_dt and datein < @tran_nw and plan='YOUTUBE' and source = 'facebook_bundled_youtube') t;
+
+    select count(1), count(distinct phone) into @buddy_hits,       @buddy_uniq       from powerapp_log where datein >= @tran_dt and datein < @tran_nw and brand='BUDDY';
+    select count(1), count(distinct phone) into @postpd_hits,      @postpd_uniq      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and brand='POSTPD';
+    select count(1), count(distinct phone) into @tnt_hits,         @tnt_uniq         from powerapp_log where datein >= @tran_dt and datein < @tran_nw and brand='TNT';
+    select count(1), count(distinct phone) into @sun_hits,         @sun_uniq         from powerapp_sun.powerapp_log where datein >= @tran_dt and datein < @tran_nw;
+
+    SET @total_hits = @total_hits + @fy5_hits + @myvolume_hits;
     insert ignore into powerapp_dailyrep (
-            tran_dt, total_hits, total_uniq, piso_hits, piso_uniq, school_hits, school_uniq, coc_hits, coc_uniq, youtube_hits, youtube_uniq,
+            tran_dt, total_hits, total_uniq, piso_hits, piso_uniq, school_hits, school_uniq, coc_hits, coc_uniq, youtube_hits, youtube_uniq, fy5_hits, fy5_uniq, myvolume_hits, myvolume_uniq,
             unli_hits, email_hits, social_hits, photo_hits, chat_hits, speed_hits, line_hits, snap_hits, tumblr_hits, waze_hits, wechat_hits, wiki_hits, free_social_hits, facebook_hits,
-            unli_uniq, email_uniq, social_uniq, photo_uniq, chat_uniq, speed_uniq, line_uniq, snap_uniq, tumblr_uniq, waze_uniq, wechat_uniq, wiki_uniq, free_social_uniq, facebook_uniq )
-    values (@tran_dt, @total_hits, @total_uniq, @piso_hits, @piso_uniq, @school_hits, @school_uniq, @coc_hits, @coc_uniq, @youtube_hits, @youtube_uniq,
+            unli_uniq, email_uniq, social_uniq, photo_uniq, chat_uniq, speed_uniq, line_uniq, snap_uniq, tumblr_uniq, waze_uniq, wechat_uniq, wiki_uniq, free_social_uniq, facebook_uniq,
+            buddy_hits, buddy_uniq, postpd_hits, postpd_uniq, tnt_hits, tnt_uniq, sun_hits, sun_uniq )
+    values (@tran_dt, @total_hits, @total_uniq, @piso_hits, @piso_uniq, @school_hits, @school_uniq, @coc_hits, @coc_uniq, @youtube_hits, @youtube_uniq, @fy5_hits, @fy5_uniq, @myvolume_hits, @myvolume_uniq, 
             @unli_hits, @email_hits, @social_hits, @photo_hits, @chat_hits, @speed_hits, @line_hits, @snap_hits, @tumblr_hits, @waze_hits, @wechat_hits, @wiki_hits, @free_social_hits, @facebook_hits,
-            @unli_uniq, @email_uniq, @social_uniq, @photo_uniq, @chat_uniq, @speed_uniq, @line_uniq, @snap_uniq, @tumblr_uniq, @waze_uniq, @wechat_uniq, @wiki_uniq, @free_social_uniq, @facebook_uniq);
+            @unli_uniq, @email_uniq, @social_uniq, @photo_uniq, @chat_uniq, @speed_uniq, @line_uniq, @snap_uniq, @tumblr_uniq, @waze_uniq, @wechat_uniq, @wiki_uniq, @free_social_uniq, @facebook_uniq,
+            @buddy_hits, @buddy_uniq, @postpd_hits, @postpd_uniq, @tnt_hits, @tnt_uniq, @sun_hits, @sun_uniq);
 
     select max(timein)
     into   @vTimeIn
@@ -145,6 +165,11 @@ begin
     select count(1), count(distinct phone) into @school_hits_24,      @school_uniq_24       from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='BACKTOSCHOOL';
     select count(1), count(distinct phone) into @coc_hits_24,         @coc_uniq_24          from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='CLASHOFCLANS';
     select count(1), count(distinct phone) into @youtube_hits_30,     @youtube_uniq_30      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE';
+    select count(1), count(distinct phone) into @youtube_hits_5,      @youtube_uniq_5       from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE' and validity = 1800  and source <> 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @youtube_hits_15,     @youtube_uniq_15      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE' and validity = 7200  and source <> 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @youtube_hits_50,     @youtube_uniq_50      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE' and validity = 18000 and source <> 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @youtube_hits_120,    @youtube_uniq_120     from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE' and validity > 18000 and source <> 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @fy5_hits_5,          @fy5_uniq_5           from powerapp_log where datein >= @tran_dt and datein < @tran_nw and plan='YOUTUBE' and source = 'facebook_bundled_youtube';
 
     insert ignore into powerapp_validity_dailyrep
            (tran_dt,              total_hits,      total_uniq,
@@ -173,7 +198,12 @@ begin
             piso_hits_15,         piso_uniq_15,
             school_hits_24,       school_uniq_24,
             coc_hits_24,          coc_uniq_24,
-            youtube_hits_30,      youtube_uniq_30)
+            youtube_hits_30,      youtube_uniq_30,
+            youtube_hits_5,       youtube_uniq_5,
+            youtube_hits_15,      youtube_uniq_15,
+            youtube_hits_50,      youtube_uniq_50,
+            youtube_hits_120,     youtube_uniq_120,
+            fy5_hits_5,           fy5_uniq_5)
     values (@tran_dt,             @total_hits,     @total_uniq,
             @unli_hits_3,         @unli_uniq_3,   
             @unli_hits_24,        @unli_uniq_24, 
@@ -200,7 +230,12 @@ begin
             @piso_hits_15,        @piso_uniq_15,
             @school_hits_24,      @school_uniq_24,
             @coc_hits_24,         @coc_uniq_24,
-            @youtube_hits_30,     @youtube_uniq_30);
+            @youtube_hits_30,     @youtube_uniq_30,
+            @youtube_hits_5,      @youtube_uniq_5,
+            @youtube_hits_15,     @youtube_uniq_15,
+            @youtube_hits_50,     @youtube_uniq_50,
+            @youtube_hits_120,    @youtube_uniq_120,
+            @fy5_hits_5,          @fy5_uniq_5);
 
    set @vCtr = 0;
    WHILE (@vCtr <= 23) DO
@@ -323,7 +358,6 @@ begin
               @coc_hits_24,         @coc_uniq_24,
               @youtube_hits_30,     @youtube_uniq_30);
    END WHILE;
-   -- call sp_generate_hi10_brand_stats (@tran_dt);
 END;
 //
 

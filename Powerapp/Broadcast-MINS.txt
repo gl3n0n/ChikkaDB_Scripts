@@ -71,27 +71,27 @@ insert into tmp_plan_users_1021 select * from tmp_plan_users;
 select bcast_dt, plan, brand, source, countmp_plan_users_102t(1) from tmp_plan_users_1021 group by 1,2,3,4;
 
 select bcast_dt, plan, brand, count(1) from tmp_plan_users group by 1,2,3;
-select phone into outfile '/tmp/TNT_20141105.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'TNT' and plan = 'SPEEDBOOST';
-select phone into outfile '/tmp/BUDDY_20141105.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'BUDDY' and plan = 'ALLDAY';
-select phone into outfile '/tmp/ANDROID_20141105.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'POWERAPP';
-select phone into outfile '/tmp/SUN_20141105.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_1020_sun;
+select phone into outfile '/tmp/TNT_20141114.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'TNT' and plan = 'SPEEDBOOST';
+select phone into outfile '/tmp/BUDDY_20141114.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'BUDDY' and plan = 'ALLDAY';
+select phone into outfile '/tmp/ANDROID_20141114.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'POWERAPP';
+select phone into outfile '/tmp/SUN_20141114.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_1020_sun;
 
 
-scp noc@172.17.250.40:/tmp/*20141105.csv /tmp/.
-scp /tmp/*20141105.csv noc@172.17.250.158:/tmp/.
+scp noc@172.17.250.40:/tmp/*20141114.csv /tmp/.
+scp /tmp/*20141114.csv noc@172.17.250.158:/tmp/.
 ssh noc@172.17.250.158
 
-vi /tmp/*20141105.csv
+vi /tmp/*20141114.csv
 639474296630
 639399369648
 639188039134
 639188882728
 639188088585
 639189087704
-wc -l /tmp/*20141105.csv 
-sort /tmp/*20141105.csv | uniq | wc -l
+wc -l /tmp/*20141114.csv 
+sort /tmp/*20141114.csv | uniq | wc -l
 cd /var/www/html/scripts/5555-powerapp/bcast/
-mv /tmp/*20141105.csv .
+mv /tmp/*20141114.csv .
 
 
 SUN Broadcast

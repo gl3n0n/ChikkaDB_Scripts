@@ -100,6 +100,16 @@ select left(datein,10) txDate, 0 BUDDY, 0 POSTPD, count(distinct phone) TNT from
 AUTO RENEWAL
 select left(datein,10) txDate, count(distinct phone) uniq from powerapp_log where datein >= '2014-10-22' and plan = 'MYVOLUME' and source like 'auto%' and brand= 'TNT' group by 1;
 
+NDS
+select b.brand, count(1) Total, sum(if(a.transmitted+a.received=0,1,0)) wZeroUsage, sum(if(a.transmitted+a.received>0,1,0)) wUsage, sum(a.transmitted+a.received) TotalUsage from tmp_liberation_usage a, powerapp_users_apn b where a.phone=b.phone and a.tx_date='2014-09-26' group by 1;
+
+select tx_date, sum(BUDDY_W) BUDDY_W, sum(POSTPD_W) POSTPD_W, sum(TNT_W) TNT_W, sum(BUDDY_WO) BUDDY_WO, sum(POSTPD_WO) POSTPD_WO, sum(TNT_WO) TNT_WO from (
+select a.tx_date, sum(if(a.transmitted+a.received=0,1,0))  BUDDY_WO, sum(if(a.transmitted+a.received>0,1,0)) BUDDY_W, 0 POSTPD_W, 0 POSTPD_WO, 0 TNT_W, 0 TNT_WO from tmp_liberation_usage a, powerapp_users_apn b where a.phone=b.phone and b.brand='BUDDY' group by 1 union
+select a.tx_date, 0 BUDDY_WO, 0 BUDDY_W, sum(if(a.transmitted+a.received=0,1,0))  POSTPD_W, sum(if(a.transmitted+a.received>0,1,0)) POSTPD_WO, 0 TNT_W, 0 TNT_WO from tmp_liberation_usage a, powerapp_users_apn b where a.phone=b.phone and b.brand='POSTPD' group by 1 union
+select a.tx_date, 0 BUDDY_WO, 0 BUDDY_W, 0 POSTPD_W, 0 POSTPD_WO, sum(if(a.transmitted+a.received=0,1,0))  TNT_W, sum(if(a.transmitted+a.received>0,1,0)) TNT_WO from tmp_liberation_usage a, powerapp_users_apn b where a.phone=b.phone and b.brand='TNT' group by 1
+) t group by 1;
+
+
 select week(datein) Week_No, 
        date_add(left(datein,10), INTERVAL(1-DAYOFWEEK(left(datein,10))) DAY) Start_Dt, 
        date_add(date_add(left(datein,10), INTERVAL(1-DAYOFWEEK(left(datein,10))) DAY), interval 6 day) End_Dt, 
