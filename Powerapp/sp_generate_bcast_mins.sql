@@ -54,7 +54,7 @@ BEGIN
    if p_pwr_limit > 0 then
       SET @vSql = '';
       SET @vSql = concat('insert into tmp_plan_users select a.phone, a.brand, ''POWERAPP'', ''', p_bcastdt, ''', ''powerapp'' from powerapp_users_apn a, tmp_chikka_apn b ',
-                         'where a.phone = b.phone ', @vWherePwr, ' limit ', p_pwr_limit);
+                         'where a.phone = b.phone and not exists (select 1 from tmp_plan_users c where c.phone = a.phone) ', @vWherePwr, ' limit ', p_pwr_limit);
       select @vSql;
       PREPARE stmt FROM @vSql;
       EXECUTE stmt;
@@ -90,27 +90,8 @@ BEGIN
    EXECUTE stmt;
    DEALLOCATE PREPARE stmt;
 
-
-   SET @vSunTableNm = concat('tmp_plan_users_', date_format(p_bcastdt, '%m%d'), '_sun');
-   SET @vSql = '';
-   SET @vSql = concat('create table ', @vSunTableNm, ' like tmp_plan_users_1010_sun');
-   select @vSql;
-   PREPARE stmt FROM @vSql;
-   EXECUTE stmt;
-   DEALLOCATE PREPARE stmt;
-      
-   if p_sun_limit > 0 then
-      SET @vSql = '';
-      SET @vSql = concat('insert into ', @vSunTableNm, ' select phone, '''', ''POWERAPP'', ''', p_bcastdt, ''', ''SUN'' from tmp_bcast_sun_mins a ',
-                         @vWhereSun, ' order by datein desc limit 500000');
-      select @vSql;
-      PREPARE stmt FROM @vSql;
-      EXECUTE stmt;
-      DEALLOCATE PREPARE stmt;
-   end if;
-
    if p_pwr_limit > 0 then
-      SET @vSql = concat('select phone into outfile ''/tmp/ANDROID_', date_format(p_bcastdt, '%Y%m%d'), '.csv'' fields terminated by '','' lines terminated by ''\n'' from tmp_plan_users where plan = ''POWERAPP''');
+      SET @vSql = concat('select phone into outfile ''/tmp/SHOUTOUT_', date_format(p_bcastdt, '%Y%m%d'), '.csv'' fields terminated by '','' lines terminated by ''\n'' from tmp_plan_users where plan = ''POWERAPP''');
       select @vSql;
       PREPARE stmt FROM @vSql;
       EXECUTE stmt;
@@ -126,7 +107,24 @@ BEGIN
    PREPARE stmt FROM @vSql;
    EXECUTE stmt;
    DEALLOCATE PREPARE stmt;
+
+   SET @vSunTableNm = concat('tmp_plan_users_', date_format(p_bcastdt, '%m%d'), '_sun');
+   SET @vSql = '';
+   SET @vSql = concat('create table ', @vSunTableNm, ' like tmp_plan_users_1201_sun');
+   select @vSql;
+   PREPARE stmt FROM @vSql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+      
    if p_sun_limit > 0 then
+      SET @vSql = '';
+      SET @vSql = concat('insert into ', @vSunTableNm, ' select phone, '''', ''POWERAPP'', ''', p_bcastdt, ''', ''SUN'' from tmp_bcast_sun_mins a ',
+                         @vWhereSun, ' order by datein desc limit 500000');
+      select @vSql;
+      PREPARE stmt FROM @vSql;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+
       SET @vSql = concat('select phone into outfile ''/tmp/SUN_', date_format(p_bcastdt, '%Y%m%d'), '.csv'' fields terminated by '','' lines terminated by ''\n'' from ', @vSunTableNm);
       select @vSql;
       PREPARE stmt FROM @vSql;

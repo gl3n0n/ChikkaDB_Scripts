@@ -98,7 +98,7 @@ select left(datein,10) txDate, 0 BUDDY, 0 POSTPD, count(distinct phone) TNT from
 ) t group by 1;
 
 AUTO RENEWAL
-select left(datein,10) txDate, count(distinct phone) uniq from powerapp_log where datein >= '2014-10-22' and plan = 'MYVOLUME' and source like 'auto%' and brand= 'TNT' group by 1;
+select left(datein,10) txDate, brand,count(distinct phone) uniq from powerapp_log where datein >= '2014-10-22' and plan = 'MYVOLUME' and source like 'auto%' and brand= 'TNT' group by 1, 2;
 
 NDS
 select b.brand, count(1) Total, sum(if(a.transmitted+a.received=0,1,0)) wZeroUsage, sum(if(a.transmitted+a.received>0,1,0)) wUsage, sum(a.transmitted+a.received) TotalUsage from tmp_liberation_usage a, powerapp_users_apn b where a.phone=b.phone and a.tx_date='2014-09-26' group by 1;
@@ -411,7 +411,7 @@ select count(distinct phone) uniq from powerapp_log where  datein < curdate() an
 
 3.
 truncate from tmp_liberation_mins;
-insert into tmp_liberation_mins select phone, max(brand) from powerapp_log where datein >= '2014-09-26' and datein < curdate() and plan = 'MYVOLUME' group by 1;
+insert ignore into tmp_liberation_mins select phone, max(brand), min(datein) from powerapp_log where datein >= '2014-11-17' and datein < curdate() and plan = 'MYVOLUME' group by 1;
 select brand, count(distinct phone) from powerapp_log a where datein >= '2014-09-26' and datein < curdate() and exists (select 1 from tmp_liberation_mins b where a.phone=b.phone) group by brand;
 
 
@@ -428,3 +428,16 @@ select count(1)  from powerapp_users_apn a, tmp_chikka_apn b where a.phone = b.p
 
 2. Didn't avail Liberation but in the Chikka APN 
 select count(1) from powerapp_users_apn a, tmp_chikka_apn b where a.phone = b.phone and a.brand = 'TNT' and not exists (select 1 from tmp_liberation_mins c where a.phone=c.phone);
+
+
+
+select  brand, count(1) from tmp_liberation_mins a where exists (select 1 from tmp_chikka_apn b where a.phone=b.phone) group by 1;
+1. MIN count of Smart prepaid subs Liberation takers but are on Chikka APN ¡V as of Dec 3
+   BUDDY:    737,958
+   TNT  :  4,001,504
+
+select  brand, count(1) from powerapp_users_apn a where exists (select 1 from tmp_chikka_apn b where a.phone=b.phone) group by 1;
+2. MIN list of ALL Smart Prepaid Subs in Chikka APN ¡V latest date also
+   BUDDY:   1,915,880
+   TNT  :   5,356,132
+   

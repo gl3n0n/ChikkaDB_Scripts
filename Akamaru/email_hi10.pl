@@ -169,7 +169,7 @@ $strSQLhi10 = "select DATE_FORMAT(a.tran_dt,'%m/%d/%Y') tran_dt,
                       IF(a.tran_dt=last_day(a.tran_dt), concat(date_format(concat(left(a.tran_dt,8),'01') , '%b-%d'), ' to ', date_format(a.tran_dt, '%b-%d')), 
                                                         concat(date_format(date_sub(a.tran_dt, interval 30 day), '%b-%d'), ' to ', date_format(a.tran_dt, '%b-%d'))
                         ) period_covered,
-                      a.buddy_uniq, a.postpd_uniq, a.tnt_uniq, a.sun_uniq
+                      a.buddy_uniq, a.postpd_uniq, a.tnt_uniq, a.sun_uniq, a.tnt_auto_rn, a.buddy_auto_rn
                from powerapp_dailyrep a left outer join powerapp_concurrent_subs b on a.tran_dt = b.tran_dt 
                where left(a.tran_dt,7) = '".$current_date."' 
                order by a.tran_dt";
@@ -186,6 +186,7 @@ $worksheet[0]->merge_range($row, $col+41, $row, $col+42, 'Hits & Optout per Day'
 $worksheet[0]->merge_range($row, $col+44, $row, $col+47, 'MINs in Chikka APN',      $format2);
 $worksheet[0]->merge_range($row, $col+49, $row, $col+51, 'Unique Subs',             $format2);
 $worksheet[0]->merge_range($row, $col+53, $row, $col+56, 'Unique Subs per Brand',   $format2);
+$worksheet[0]->merge_range($row, $col+58, $row, $col+59, 'Liberation Auto-Renewal', $format2);
 
 $worksheet[0]->set_column(0,0,9);
 $worksheet[0]->set_column(1,1,9);
@@ -219,6 +220,8 @@ $worksheet[0]->set_column(49,50,12);
 $worksheet[0]->set_column(51,51,16);
 $worksheet[0]->set_column(52,52,1);
 $worksheet[0]->set_column(53,56,9);
+$worksheet[0]->set_column(57,57,1);
+$worksheet[0]->set_column(58,59,12);
 #
 $worksheet[0]->write($row+$i, $col,     'DATE',           $format);
 $worksheet[0]->write($row+$i, $col+1,   'UNLI',           $format);
@@ -278,6 +281,9 @@ $worksheet[0]->write($row+$i, $col+54,  'POSTPAID',       $format);
 $worksheet[0]->write($row+$i, $col+55,  'TNT',            $format);
 $worksheet[0]->write($row+$i, $col+56,  'SUN',            $format);
 
+$worksheet[0]->write($row+$i, $col+58,  'TNT',            $format);
+$worksheet[0]->write($row+$i, $col+59,  'BUDDY',          $format);
+
 while (@rowRst = $sth_hi_10->fetchrow()) {
    $i++;
    $worksheet[0]->write($row+$i, $col,     $rowRst[0],   $format1);
@@ -332,6 +338,8 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
    $worksheet[0]->write($row+$i, $col+54,  $rowRst[49],  $format1);
    $worksheet[0]->write($row+$i, $col+55,  $rowRst[50],  $format1);
    $worksheet[0]->write($row+$i, $col+56,  $rowRst[51],  $format1);
+   $worksheet[0]->write($row+$i, $col+58,  $rowRst[52],  $format1);
+   $worksheet[0]->write($row+$i, $col+59,  $rowRst[53],  $format1);
 }
 
 $strSQLhi10 = "select DATE_FORMAT(tran_dt,'%b %Y'), num_subs 
