@@ -82,7 +82,7 @@ from   tmp_powerapp_hourly where t_usage > 0;
 select tx_date, left(start_tm,2) tx_hh, count(distinct phone) uniq, sum(b_usage) b_usage, sum(time_to_sec(timediff(end_tm,start_tm))) t_time from powerapp_udr_log where service = 'MyvolumeService' group by 1,2;
 
 
-insert ignore into tmp_liberation_mins select phone, max(brand), min(datein) from powerapp_log where datein >= '2014-10-30' and plan = 'MYVOLUME' group by 1;
+insert ignore into tmp_liberation_mins select phone, max(brand), min(datein) from powerapp_log where datein >= '2014-12-10 23:50:00' and plan = 'MYVOLUME' group by 1;
 
 
 select txDate, sum(BUDDY) BUDDY, sum(POSTPD) POSTPD, sum(TNT) TNT from (
@@ -411,10 +411,16 @@ select count(distinct phone) uniq from powerapp_log where  datein < curdate() an
 
 3.
 truncate from tmp_liberation_mins;
-insert ignore into tmp_liberation_mins select phone, max(brand), min(datein) from powerapp_log where datein >= '2014-11-17' and datein < curdate() and plan = 'MYVOLUME' group by 1;
+insert ignore into tmp_liberation_mins select phone, max(brand), min(datein) from powerapp_log where datein >= '2014-12-04' and datein < curdate() and plan = 'MYVOLUME' group by 1;
 select brand, count(distinct phone) from powerapp_log a where datein >= '2014-09-26' and datein < curdate() and exists (select 1 from tmp_liberation_mins b where a.phone=b.phone) group by brand;
 
 
+select a.phone, a.datein, round(sum(b.download+b.upload)/1000000,2) usage_mb
+from  tmp_liberation_mins a, powerapp_nds_log b
+where a.phone = b.phone
+and   a.datein <= '2014-11-02'
+and   b.tx_date = '2014-11-01'
+and   
 
 
 
@@ -440,4 +446,18 @@ select  brand, count(1) from powerapp_users_apn a where exists (select 1 from tm
 2. MIN list of ALL Smart Prepaid Subs in Chikka APN ¡V latest date also
    BUDDY:   1,915,880
    TNT  :   5,356,132
+
+
+
+
+TNT Liberation usage per MINs
+
+select a.phone, b.tx_date, sum(IF(b.service='FacebookService',b.transmit+b.received,0)) total_fb_usage, round(sum(b.transmit+b.received)/1000000,2) total_usage_mb 
+into outfile '/tmp/Liberation_TNT_usage_20141212.csv' fields terminated by ',' lines terminated by '\n' 
+from  tmp_liberation_mins a, powerapp_nds_log_bkp20141212 b
+where a.phone = b.phone
+and   a.datein < '2014-12-13'
+and   b.tx_date = '2014-12-12'
+and  a.brand = 'TNT'
+group by 1,2;
    

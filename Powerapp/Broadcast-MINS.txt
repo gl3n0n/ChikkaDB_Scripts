@@ -78,9 +78,9 @@ select phone into outfile '/tmp/SUN_20141210.csv' fields terminated by ',' lines
 select phone into outfile '/tmp/SHOUTOUT_20141210.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'POWERAPP';
 
 
-scp noc@172.17.250.40:/tmp/*20141210.csv /tmp/.
-scp /tmp/*20141210.csv noc@172.17.250.158:/tmp/.
-ssh noc@172.17.250.158
+scp gmlenon@172.17.250.40:/tmp/*20141218.csv /tmp/.
+scp /tmp/*20141210.csv gmlenon@172.17.250.158:/tmp/.
+ssh gmlenon@172.17.250.158
 
 rm /tmp/SUN_20141210.csv
 mv /tmp/ANDROID_20141210.csv /tmp/SHOUTOUT_20141210.csv
@@ -106,9 +106,8 @@ order by datein desc limit 500000;
 
 select phone into outfile '/tmp/SUN_20141210.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_1210_sun;
 
-scp noc@172.17.250.40:/tmp/SUN_20141210.csv /tmp/.
-scp /tmp/SUN_20141210.csv noc@172.17.250.176:/var/www/html/scripts/5555-powerapp/bcast/.
-ssh noc@172.17.250.176
+scp /tmp/SUN_20141218.csv gmlenon@172.17.250.176:/tmp/.
+ssh gmlenon@172.17.250.176
 cd /var/www/html/scripts/5555-powerapp/bcast
 mv /tmp/SUN_20141210.csv .
 
