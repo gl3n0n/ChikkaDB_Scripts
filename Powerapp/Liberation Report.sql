@@ -20,8 +20,14 @@ into outfile '/tmp/Sept_1_25_Report.csv' fields terminated by ',' lines terminat
 from powerapp_log where datein >= '2014-09-26' and b_usage > 0 group by phone;
 
 
-
-
+select a.phone, b.tx_date, sum(IF(b.service='FacebookService',b.transmit+b.received,0)) total_fb_usage, round(sum(b.transmit+b.received)/1000000,2) total_usage_mb 
+into outfile '/tmp/Liberation_TNT_usage_20141101.csv' fields terminated by ',' lines terminated by '\n' 
+from  tmp_liberation_mins a, powerapp_nds_log_bkp20141212 b
+where a.phone = b.phone
+and   a.datein < '2014-11-02'
+and   b.tx_date = '2014-11-01'
+and  a.brand = 'TNT'
+group by 1,2;
 MIN,Registration Date,Total MB Usage,Total Duration In Minutes
 create temporary table tmp_liberation_mins (phone varchar(12) not null, datein date, primary key (phone));
 insert into tmp_liberation_mins select phone, left(min(datein),10) from powerapp_log where datein >= '2014-09-26' and plan='MYVOLUME' group by 1;
@@ -454,10 +460,40 @@ TNT Liberation usage per MINs
 
 select a.phone, b.tx_date, sum(IF(b.service='FacebookService',b.transmit+b.received,0)) total_fb_usage, round(sum(b.transmit+b.received)/1000000,2) total_usage_mb 
 into outfile '/tmp/Liberation_TNT_usage_20141212.csv' fields terminated by ',' lines terminated by '\n' 
-from  tmp_liberation_mins a, powerapp_nds_log_bkp20141212 b
+from  tmp_liberation_mins a, powerapp_nds_log b
 where a.phone = b.phone
 and   a.datein < '2014-12-13'
 and   b.tx_date = '2014-12-12'
 and  a.brand = 'TNT'
 group by 1,2;
-   
+
+
+
+select grp_b, count(1) from (
+select a.phone, case when sum(b.transmit+b.received)/1000000 >= 30 then '30mb-Above'
+                     when sum(b.transmit+b.received)/1000000 >= 25 then '25mb-29mb'
+                     when sum(b.transmit+b.received)/1000000 >= 20 then '20mb-24mb'
+                     when sum(b.transmit+b.received)/1000000 >= 15 then '15mb-19mb'
+                     when sum(b.transmit+b.received)/1000000 >= 10 then '10mb-14mb'
+                     when sum(b.transmit+b.received)/1000000 >= 5  then '5mb-9mb'
+                     when sum(b.transmit+b.received)/1000000 >  0  then '1mb-5mb' 
+                     when sum(b.transmit+b.received)/1000000 =  0  then 'NoUsage' 
+                end as grp_b
+from  tmp_liberation_mins a, powerapp_nds_log b
+where a.phone = b.phone
+and   a.datein < '2015-02-09'
+and   b.tx_date = '2015-02-09'
+group by 1) t group by 1;
+
++------------+----------+------+
+| Usage      |    count | Pct  |
++------------+----------+------+
+| 30mb-Above |   161158 |  21% |
+| 25mb-29mb  |    27655 |   4% |
+| 20mb-24mb  |    32887 |   4% |
+| 15mb-19mb  |    41058 |   5% |
+| 10mb-14mb  |    55106 |   7% |
+| 5mb-9mb    |    90204 |  12% |
+| 1mb-5mb    |   348509 |  46% |
+| NoUsage    |     4991 |   1% |
++------------+----------+------+

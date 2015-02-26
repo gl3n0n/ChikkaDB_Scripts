@@ -1105,7 +1105,7 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
 $workbook->close();
  binmode STDOUT;
 
-$from = "stats\@chikka.com";
+$from = "powerapp_stats\@chikka.com";
 $to = "victor\@chikka.com,jomai\@chikka.com,dikster424\@gmail.com,dungomichelle\@yahoo.com,elusivefaith\@gmail.com,mariefe.rivera1012\@gmail.com,noei17\@yahoo.com.ph,maine.gorospe\@gmail.com";
 $cc = "dbadmins\@chikka.com";
 #$to = "glenon\@chikka.com";

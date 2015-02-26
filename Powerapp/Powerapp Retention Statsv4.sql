@@ -21,11 +21,13 @@ begin
    select  id, datein, phone, brand, action,  plan, validity, free, start_tm, end_tm, source from powerapp_flu.powerapp_log where datein >=  p_trandate and datein < date_add(p_trandate, interval 2 day);
    -- powerapp_users
    insert ignore into powerapp_users (phone, brand, datein ) select phone, brand, concat(datein, ' ', timein) datein from powerapp_flu.new_subscribers where datein >=  p_trandate and datein < date_add(p_trandate, interval 2 day);
+   -- powerapp_users
+   insert ignore into tmp_liberation_mins (phone, brand, datein ) select phone, max(brand), min(datein) from powerapp_flu.powerapp_log where datein >=  p_trandate and datein < date_add(p_trandate, interval 2 day) and plan ='MYVOLUME' group by phone;
    -- powerapp_optout_users
    insert ignore  into powerapp_optout_users (phone, brand, datein ) select phone, min(datein), min(brand) from powerapp_flu.powerapp_optout_log where datein >=  p_trandate and datein < date_add(p_trandate, interval 2 day) group by phone;
-   call sp_generate_retention_stats (p_trandate);
-   call sp_generate_15day_retention_stats(p_trandate);
-   call sp_generate_retention_stats_monthly (p_trandate);
+   -- call sp_generate_retention_stats (p_trandate);
+   -- call sp_generate_15day_retention_stats(p_trandate);
+   -- call sp_generate_retention_stats_monthly (p_trandate);
    call sp_generate_active_stats(date_add(p_trandate, interval 1 day));
 
    set @vCtr = 6;
@@ -37,6 +39,21 @@ begin
 end;
 //
 delimiter ;
+
+
+
+DROP EVENT evt_pwrapp_generate_retention;
+delimiter //
+CREATE EVENT evt_pwrapp_generate_retention
+ON SCHEDULE 
+EVERY 1 DAY STARTS '2015-02-12 04:00:00' 
+DO 
+  call sp_regenerate_retention_main(date_sub(curdate(), interval 1 day));
+//
+delimiter ;
+
+
+
 
 
 GRANT EXECUTE ON PROCEDURE `archive_powerapp_flu`.`sp_generate_retention_main` TO 'stats'@'localhost';
@@ -69,11 +86,11 @@ begin
       select no_day, count(distinct phone) hits from (
       select phone, count(1) no_day from (
       select left(datein,10) datein, phone, count(1) hits from powerapp_log 
-      where datein < date_add(p_trandate, interval 1 day) and  datein >= date_sub(p_trandate, interval 6 day) 
+      where datein >= date_sub(p_trandate, interval 6 day) and datein < date_add(p_trandate, interval 1 day)
       group by left(datein,10), phone
       union
       select left(datein,10) datein, phone, count(1) hits from powerapp_flu.powerapp_log 
-      where datein < date_add(p_trandate, interval 1 day) and  datein >= date_sub(p_trandate, interval 6 day) 
+      where datein >= date_sub(p_trandate, interval 6 day) and datein < date_add(p_trandate, interval 1 day)
       group by left(datein,10), phone
       ) t1 group by phone
       ) t2

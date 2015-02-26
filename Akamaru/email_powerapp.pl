@@ -244,7 +244,7 @@ $msg = MIME::Lite->new(
         Data => qq{
             <body>
                 <p>
-                        <span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">PowerApp Stats (Hits & Revenue) for the Month of $txt_month.</span></span></p>
+                        <span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">PowerApp Usage Report for the Month of $txt_month.</span></span></p>
                 <p>
                         <span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">Please refer to the attachment.</span></span></p>
                 <p>

@@ -378,6 +378,42 @@ flush privileges;
 drop procedure sp_generate_month_days;
 delimiter //
 
+
+
+DROP EVENT evt_pwrapp_generate_stats;
+delimiter //
+CREATE EVENT evt_pwrapp_generate_stats
+ON SCHEDULE 
+EVERY 1 DAY STARTS '2015-01-28 04:00:00' 
+DO 
+  call sp_regenerate_hi10_stats(date_sub(curdate(), interval 1 day));
+//
+delimiter ;
+
+
+
+DROP EVENT evt_pwrapp_generate_stats_8am;
+delimiter //
+CREATE EVENT evt_pwrapp_generate_stats_8am
+ON SCHEDULE 
+EVERY 1 DAY STARTS '2015-01-29 07:57:00' 
+DO 
+  call sp_generate_hi10_stats_now;
+//
+delimiter ;
+
+
+DROP EVENT evt_pwrapp_generate_stats_8pm;
+delimiter //
+CREATE EVENT evt_pwrapp_generate_stats_8pm
+ON SCHEDULE 
+EVERY 1 DAY STARTS '2015-01-28 19:57:00' 
+DO 
+  call sp_generate_hi10_stats_now;
+//
+delimiter ;
+
+
 create procedure sp_generate_month_days (p_trandate date)
 begin
   declare dStart date;

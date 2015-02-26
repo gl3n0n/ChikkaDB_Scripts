@@ -103,7 +103,7 @@ while (@mainRst = $sth_main->fetchrow()) {
                             sum(a.download) download, sum(a.upload) upload, sum(c.no_buys) no_buys, sum(b.count) uniq, round(sum(a.download+a.upload)/1000000,2) total_mb,
                             round((sum(a.download+a.upload)/1000000) / sum(b.count),2) avg_total,
                             round((sum(a.download)/1000000) / sum(b.count),2) avg_download
-                     from   usage_per_plan a, unique_subs b, (select left(a.datein,10) datein, b.service, count(1) no_buys from powerapp_log a, powerapp_plan_services_mapping b where a.plan=b.plan and a.datein >= concat('".$current_date."', '-01') group by 1,2) c
+                     from   usage_per_plan a, unique_subs b, buys_per_plan c
                      where  a.datein  = b.datein 
                      and    a.service = b.service 
                      and    a.datein  = c.datein 
@@ -119,7 +119,7 @@ while (@mainRst = $sth_main->fetchrow()) {
                             a.download download, a.upload upload, c.no_buys no_buys, b.count uniq, round((a.download+a.upload)/1000000,2) total_mb,
                             round(((a.download+a.upload)/1000000)/c.no_buys,2) avg_total,
                             round((a.download/1000000)/c.no_buys,2) avg_download
-                     from   usage_per_plan a, unique_subs b, (select left(a.datein,10) datein, b.service, count(1) no_buys from powerapp_log a, powerapp_plan_services_mapping b where a.plan=b.plan and a.datein >= concat('".$current_date."', '-01') group by 1,2) c
+                     from   usage_per_plan a, unique_subs b, buys_per_plan c
                      where  a.datein  = b.datein 
                      and    a.service = b.service 
                      and    a.datein  = c.datein 

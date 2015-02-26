@@ -1,3 +1,44 @@
+drop procedure sp_generate_toptalker;
+delimiter //
+create procedure sp_generate_toptalker (p_trandate date)
+begin
+   set session tmp_table_size = 268435456;
+   set session max_heap_table_size = 268435456;
+   set session sort_buffer_size = 104857600;
+   set session read_buffer_size = 8388608;
+
+   insert into powerapp_nds_toptalker (tx_date, phone, transmit, received, tx_usage)
+   select tx_date, phone, sum(transmit), sum(received), sum(transmit+received)
+   from   powerapp_nds_log
+   where  tx_date = p_trandate
+   group  by tx_date, phone
+   order  by 5 desc
+   limit 1000;
+
+   insert into powerapp_nds_toptalker_services (tx_date, phone, service, transmit, received, tx_usage)
+   select tx_date, phone, service, sum(transmit), sum(received), sum(transmit+received) 
+   from   powerapp_nds_log a
+   where  tx_date = p_trandate
+   and    exists (select 1 from powerapp_nds_toptalker b where a.tx_date=b.tx_date and a.phone=b.phone)
+   group by tx_date, phone, service
+   having sum(transmit+received) > 0;
+
+   insert into powerapp_nds_toptalker_buys (tx_date, phone, plan, hits)
+   select left(datein,10) tx_date, phone, plan, count(1) hits 
+   from    powerapp_log a 
+   where  datein >= p_trandate and datein < date_add(p_trandate, interval 1 day)
+   and    plan <> 'MYVOLUME' 
+   and    exists (select 1 from powerapp_nds_toptalker b where b.tx_date = p_trandate and a.phone = b.phone)
+   group by left(datein,10), phone, plan;
+
+end;
+//
+delimiter ;
+
+GRANT EXECUTE ON PROCEDURE `archive_powerapp_flu`.`sp_generate_toptalker` TO 'stats'@'localhost';
+flush privileges;
+
+
 select count(distinct phone) from powerapp_log where datein >= '2014-09-01 00:00:00' and datein < '2014-09-01 05:00:00';
 select count(distinct phone) from powerapp_log where datein >= '2014-09-02 00:00:00' and datein < '2014-09-02 05:00:00';
 
@@ -265,3 +306,112 @@ select * from powerapp_udr_log where phone = '639293610182' and service='Unlimit
 +--------------+------------++--------------+------------+
 
 
+
+sftp dbsftpuser@172.17.250.162
+tr4n$p0Rt3R!
+cd /incoming/
+
+load data local infile '/mnt/paywall_dmp/dmp/nds/out/2015-01-05.csv' into table tmp_youtube_nds fields terminated by ',' lines terminated by '\n' (phone,service,transmit,received,tx_date) set tx_date='2015-01-05';
+
+
+set session tmp_table_size = 268435456;
+set session max_heap_table_size = 268435456;
+set session sort_buffer_size = 104857600;
+set session read_buffer_size = 8388608;
+create temporary table tmp_toptalker as
+select phone, sum(transmit+received) b_usage, group_concat(distinct(service) separator ',') service from tmp_youtube_nds group by phone order by 2 desc limit 10;
+alter table tmp_toptalker add key (phone);
+
+create temporary table tmp_toptalker_buys as select phone, plan, count(1) hits from powerapp_log a where datein >= '2015-02-09' and datein < '2015-02-10'
+and  exists (select 1 from tmp_toptalker_0209 b where a.phone = b.phone)
+group by phone, plan;
+alter table tmp_toptalker_buys add key (phone);
+
+select a.phone, a.b_usage, a.service, group_concat(concat(b.plan, ':', hits) separator ',') buys from tmp_toptalker a left outer join tmp_toptalker_buys b
+on a.phone = b.phone group by 1,2,3 order by 2 desc,1;
+
++--------------+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------+
+| phone        | b_usage    | service                                                                                                                                                                                                                                                                                       | buys                               |
++--------------+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------+
+| 639485082402 | 2562921348 | FacebookService,ClashofclansService,BacktoschoolService,LineService,ChatService,EmailService,MyvolumeService,SpeedBoostService,SocialService,SnapchatService,PhotoService,PisonetService,WazeService,UnlimitedService,YoutubeService,Whitelisted,TumblrService,WikipediaService,WechatService | FACEBOOK:1,PISONET:8,SPEEDBOOST:47 |
+| 639298056555 | 2327945087 | SnapchatService,SpeedBoostService,MyvolumeService,PisonetService,PhotoService,SocialService,UnlimitedService,WikipediaService,Whitelisted,YoutubeService,WazeService,TumblrService,WechatService,EmailService,ClashofclansService,FacebookService,BacktoschoolService,ChatService,LineService | UNLI:1                             |
+| 639289993682 | 2306141423 | LineService,FacebookService,ClashofclansService,EmailService,BacktoschoolService,ChatService,SnapchatService,SocialService,MyvolumeService,PisonetService,PhotoService,SpeedBoostService,Whitelisted,UnlimitedService,YoutubeService,WikipediaService,WechatService,TumblrService,WazeService | FACEBOOK:1                         |
+| 639107017473 | 2296523636 | MyvolumeService,SocialService,PhotoService,SpeedBoostService,TumblrService,SnapchatService,PisonetService,WazeService,YoutubeService,WikipediaService,Whitelisted,WechatService,UnlimitedService,ChatService,BacktoschoolService,LineService,FacebookService,ClashofclansService,EmailService | FACEBOOK:1                         |
+| 639099909009 | 2225313423 | WechatService,UnlimitedService,WikipediaService,YoutubeService,Whitelisted,WazeService,BacktoschoolService,FacebookService,LineService,EmailService,ClashofclansService,ChatService,PisonetService,MyvolumeService,SocialService,TumblrService,SpeedBoostService,PhotoService                 | FACEBOOK:1                         |
+| 639074138009 | 2202820289 | BacktoschoolService,FacebookService,LineService,ClashofclansService,EmailService,ChatService,MyvolumeService,SnapchatService,PhotoService,SpeedBoostService,PisonetService,SocialService,TumblrService,WechatService,WikipediaService,WazeService,YoutubeService,UnlimitedService,Whitelisted | FACEBOOK:1                         |
+| 639499836863 | 2161076198 | WazeService,Whitelisted,WechatService,YoutubeService,UnlimitedService,TumblrService,WikipediaService,FacebookService,LineService,EmailService,ChatService,BacktoschoolService,ClashofclansService,PhotoService,PisonetService,MyvolumeService,SpeedBoostService,SocialService,SnapchatService | FACEBOOK:1,SPEEDBOOST:11,UNLI:1    |
+| 639093579321 | 2018174378 | TumblrService,SocialService,SnapchatService,SpeedBoostService,PhotoService,MyvolumeService,PisonetService,YoutubeService,UnlimitedService,WechatService,WikipediaService,WazeService,Whitelisted,ClashofclansService,EmailService,ChatService,FacebookService,LineService,BacktoschoolService | FACEBOOK:1                         |
+| 639477810274 | 2012412619 | ChatService,LineService,EmailService,BacktoschoolService,FacebookService,ClashofclansService,PisonetService,SocialService,PhotoService,MyvolumeService,SpeedBoostService,SnapchatService,YoutubeService,TumblrService,WikipediaService,Whitelisted,WazeService,UnlimitedService,WechatService | FACEBOOK:1                         |
+| 639993430168 | 1962104222 | PhotoService,SocialService,SnapchatService,SpeedBoostService,MyvolumeService,PisonetService,TumblrService,WazeService,YoutubeService,Whitelisted,WechatService,UnlimitedService,WikipediaService,EmailService,LineService,BacktoschoolService,ClashofclansService,FacebookService,ChatService | FACEBOOK:1                         |
++--------------+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------+
+10 rows in set (0.00 sec)
+
+
+select phone, service, sum(transmit+received) b_usage from tmp_youtube_nds a where exists (select 1 from tmp_toptalker b where a.phone=b.phone ) group by 1,2 having sum(transmit+received)>0 order by 2 desc,1;
+
+   set session tmp_table_size = 268435456;
+   set session max_heap_table_size = 268435456;
+   set session sort_buffer_size = 104857600;
+   set session read_buffer_size = 8388608;
+   set group_concat_max_len = 3200000;
+
+select '2015-02-16' into @p_trandate;
+insert into powerapp_nds_toptalker_buys (tx_date, phone, plan, hits)
+select left(datein,10) tx_date, phone, plan, count(1) hits 
+from   powerapp_log a 
+where  datein >= @p_trandate and datein < date_add(@p_trandate, interval 1 day)
+and    plan <> 'MYVOLUME' 
+and    exists (select 1 from powerapp_nds_toptalker b where b.tx_date = @p_trandate and a.phone = b.phone)
+group by left(datein,10), phone, plan;
+
+
+select phone, tx_usage, max(buys) buys, max(services) services from (
+select a.phone, a.tx_usage, 
+       group_concat(concat(b.plan, ':', b.hits) separator ' ^ ') buys, 
+       null services
+from powerapp_nds_toptalker a 
+left outer join powerapp_nds_toptalker_buys b on a.tx_date=b.tx_date and a.phone = b.phone 
+where a.tx_date = @p_trandate
+group by 1,2 
+union
+select a.phone, a.tx_usage, 
+       null buys, 
+       group_concat(concat(c.service , ':', c.tx_usage) separator ' ^ ') services
+from powerapp_nds_toptalker a 
+left outer join powerapp_nds_toptalker_services c on a.tx_date=c.tx_date and a.phone = c.phone  
+where a.tx_date = @p_trandate
+group by 1,2 
+) t1
+group by phone, tx_usage
+order by tx_usage desc,phone limit 10;
+
+
+
+select phone, tx_usage, max(buys) buys, max(services) services from (
+select a.phone, a.tx_usage, 
+       group_concat(concat(b.plan, ':', b.hits) separator ' ^ ') buys, 
+       null services
+from powerapp_nds_toptalker a 
+left outer join powerapp_nds_toptalker_buys b on a.tx_date=b.tx_date and a.phone = b.phone 
+where a.tx_date = @p_trandate
+group by 1,2 
+union
+select a.phone, a.tx_usage, 
+       null buys, 
+       group_concat(concat(c.service , ':', c.tx_usage) separator ' ^ ') services
+from powerapp_nds_toptalker a 
+left outer join powerapp_nds_toptalker_services c on a.tx_date=c.tx_date and a.phone = c.phone  
+where a.tx_date = @p_trandate
+group by 1,2 
+) t1
+group by phone, tx_usage
+having max(buys) is null 
+order by tx_usage desc,phone limit 10;
+
+
+create temporary table tmp_toptalker_buys as select phone, plan, count(1) hits from powerapp_log a where datein >= '2015-02-09' and datein < '2015-02-10'
+and  exists (select 1 from tmp_toptalker_0209 b where a.phone = b.phone)
+group by phone, plan;
+alter table tmp_toptalker_buys add key (phone);
+select a.phone, a.receive, group_concat(concat(b.plan, ':', hits) separator ',') buys from tmp_toptalker_0209 a left outer join tmp_toptalker_buys b
+on a.phone = b.phone group by 1,2 order by 2 desc,1;

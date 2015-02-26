@@ -70,6 +70,10 @@ bzcat SANDVINE_01_2014_06_18_21_02_55.udr.bz2 | awk -F',' '{printf $4 "+"$7"+"$8
 cat pisousage0625.txt | awk -F',' '{printf $4"+"$5"+"$7"+"$8"+"$13"+"$14"+"$17 "\n"}' | awk -F'+' '{printf substr($1,0,10)","substr($1,0,19)","substr($3,0,19)","$5","$6","$7","$8","$9"\n"}' | grep -v NoEnforce > 2clashofclans_0620.txt
 
 cd /usr/local/sandvine/var/spool/logging/target/UDR
-bzcat SANDVINE_01_2014_06_29_*.bz2 | bzgrep -i "pisonetservice" | awk -F',' '{printf $4"+"$5"+"$7"+"$8"+"$13"+"$14"+"$17 "\n"}' | awk -F'+' '{printf substr($1,0,10)","substr($1,0,19)","substr($3,0,19)","$5","$6","$7","$8","$9"\n"}' >> /tmp/pisousage_0625_0629.txt
+bzcat SANDVINE_01_2015_02_19*.bz2 | awk -F',' '{printf $4"+"$5"+"$7"+"$8"+"$13"+"$14"+"$17 "\n"}' | awk -F'+' '{printf substr($1,0,10)","substr($1,0,19)","substr($3,0,19)","$5","$6","$7","$8","$9"\n"}' >> /tmp/SANDVINE_01_2015_02_19.txt
 
 cat voice.txt | grep 2014-07-01 | grep voice_upload | grep recipient | awk -F' ' '{print substr($1,26,10),substr($1,37,8),substr($2,17,7),$5,substr($8,164,12)}'
+
+
+
+bzcat SANDVINE_01_2015_02_19*.bz2 | awk -F',' '{printf $4"+"$7"+"$14"+"$15"+"$16"+"$17"+"$18 "\n"}' | awk -F'+' '{printf substr($1,0,10)","$3","$4","$5","$8"\n"}' > /tmp/SANDVINE_01_2015_02_19.txt

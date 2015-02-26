@@ -491,8 +491,8 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
       $col = $col+4;
       $k=$k+3;
    }
-}                                               
 
+}                                               
 
 # $col=0;
 # for ($i=0;$i<3;$i++){
@@ -581,8 +581,8 @@ $workbook->close();
 $from = "powerapp_stats\@chikka.com";
 $to = "victor\@chikka.com,ps.java\@chikka.com,jomai\@chikka.com,ra\@chikka.com,ian\@chikka.com";
 $cc = "dbadmins\@chikka.com,jldespanol\@chikka.com";
-$to = "glenon\@chikka.com";
-$cc = "glenon\@chikka.com";
+$to = "jomai\@chikka.com";
+$cc = "dbadmins\@chikka.com";
 $Subject = "PowerApp Stats SUN, ".$current_day;
 
 # Part using which the attachment is sent to an email #
@@ -600,7 +600,7 @@ $msg->attach(
     Data => qq{
         <body>
             <p>
-                    <span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">PowerApp Stats SUN (Hits & Revenue) for the Month of $txt_month.</span></span></p>
+                    <span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">PowerApp Stats SUN for the Month of $txt_month.</span></span></p>
             <p>
                     <span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">Please refer to the attachment.</span></span></p>
             <p>

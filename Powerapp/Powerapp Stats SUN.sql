@@ -356,6 +356,18 @@ delimiter ;
 GRANT EXECUTE ON PROCEDURE  sp_generate_pwrapp_sun_stats  TO 'stats'@'10.11.4.164';
 flush privileges;
 
+
+DROP EVENT evt_pwrapp_generate_sun_stats;
+delimiter //
+CREATE EVENT evt_pwrapp_generate_sun_stats
+ON SCHEDULE 
+EVERY 1 DAY STARTS '2015-01-29 04:00:00' 
+DO 
+  call sp_generate_pwrapp_sun_stats(NULL);
+//
+delimiter ;
+
+
 call sp_generate_pwrapp_sun_stats('2014-08-15');
 call sp_generate_pwrapp_sun_stats('2014-08-16');
 call sp_generate_pwrapp_sun_stats('2014-08-17');

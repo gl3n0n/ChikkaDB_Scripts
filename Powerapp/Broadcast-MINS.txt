@@ -71,20 +71,28 @@ insert into tmp_plan_users_1021 select * from tmp_plan_users;
 select bcast_dt, plan, brand, source, countmp_plan_users_102t(1) from tmp_plan_users_1021 group by 1,2,3,4;
 
 select bcast_dt, plan, brand, count(1) from tmp_plan_users group by 1,2,3;
-select phone into outfile '/tmp/TNT_20141210.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'TNT' and plan = 'YOUTUBE';
-select phone into outfile '/tmp/BUDDY_20141210.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'BUDDY' and plan = 'ALLDAY';
-select phone into outfile '/tmp/SHOUTOUT_20141210.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'POWERAPP';
-select phone into outfile '/tmp/SUN_20141210.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_1020_sun;
-select phone into outfile '/tmp/SHOUTOUT_20141210.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'POWERAPP';
+select phone into outfile '/tmp/TNT_20150115.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'TNT' and plan = 'YOUTUBE';
+select phone into outfile '/tmp/BUDDY_20150115.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'BUDDY' and plan = 'ALLDAY';
+select phone into outfile '/tmp/SHOUTOUT_20150115.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'POWERAPP';
+select phone into outfile '/tmp/SUN_20150115.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_1020_sun;
+select phone into outfile '/tmp/SHOUTOUT_20150115.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where plan = 'POWERAPP';
+
+set session tmp_table_size = 268435456;
+set session max_heap_table_size = 268435456;
+set session sort_buffer_size = 104857600;
+set session read_buffer_size = 8388608;
+select phone into outfile '/tmp/DEARPOPE_20150120.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein > '2015-01-14' and plan = 'DEARPOPE' group by 1;
 
 
-scp gmlenon@172.17.250.40:/tmp/*20141218.csv /tmp/.
-scp /tmp/*20141210.csv gmlenon@172.17.250.158:/tmp/.
+scp gmlenon@172.17.250.40:/tmp/*20150115.csv /tmp/.
+scp /tmp/*20150115.csv gmlenon@172.17.250.158:/tmp/.
 ssh gmlenon@172.17.250.158
+su -
+chown noc.noc /tmp/*20150115.csv
+su - noc
 
-rm /tmp/SUN_20141210.csv
-mv /tmp/ANDROID_20141210.csv /tmp/SHOUTOUT_20141210.csv
-vi /tmp/*20141210.csv
+rm /tmp/SUN_20150115.csv
+head /tmp/*20150115.csv
 639474296630
 639399369648
 639188039134
@@ -92,11 +100,11 @@ vi /tmp/*20141210.csv
 639188088585
 639189087704
 
-wc -l /tmp/*20141210.csv 
-sort /tmp/*20141210.csv | uniq | wc -l
+wc -l /tmp/*20150115.csv 
+sort /tmp/*20150115.csv | uniq | wc -l
 cd /var/www/html/scripts/5555-powerapp/bcast/
-mv /tmp/*20141210.csv .
-
+mv /tmp/*20150115.csv .
+ls -lhtr
 
 SUN Broadcast
 
@@ -104,19 +112,21 @@ create table tmp_plan_users_1018_sun like tmp_plan_users_1010_sun;
 insert into tmp_plan_users_1018_sun select phone, '', 'POWERAPP', '2014-10-18', 'SUN' from tmp_bcast_sun_mins a 
 order by datein desc limit 500000;
 
-select phone into outfile '/tmp/SUN_20141210.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_1210_sun;
+select phone into outfile '/tmp/SUN_20150115.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_1231_sun;
 
-scp /tmp/SUN_20141218.csv gmlenon@172.17.250.176:/tmp/.
+scp /tmp/SUN_20150113.csv gmlenon@172.17.250.176:/tmp/.
 ssh gmlenon@172.17.250.176
+su -
+chown noc.noc /tmp/SUN_2015011*.csv
 cd /var/www/html/scripts/5555-powerapp/bcast
-mv /tmp/SUN_20141210.csv .
+mv /tmp/SUN_2015011*.csv .
 
 
 
 UNLI MINs
 mysql -uroot -p -S/mnt/dbrep3307/mysql.sock archive_powerapp_flu -N -e "insert into tmp_unli_mins select phone, max(brand), min(datein) from powerapp_log where datein >= date_sub(curdate(), interval 30 day) and plan = 'UNLI' group by phone"
 update tmp_unli_mins set dt_bcast = '2014-12-10' where dt_bcast is null order by datein limit 500000;
-select phone into outfile '/tmp/UNLI_20141210.csv' fields terminated by ',' lines terminated by '\n' from tmp_unli_mins;
+select phone into outfile '/tmp/UNLI_20150115.csv' fields terminated by ',' lines terminated by '\n' from tmp_unli_mins;
 
 
 PISONET

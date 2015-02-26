@@ -575,21 +575,45 @@ while (@rowRst = $sth_ctm_v6->fetchrow()) {
 #
 #
 #
+$worksheet[3]->set_column('a:a',15);
+$worksheet[3]->set_column('b:c',10);
 
-$worksheet[3]->write($row, $col+0,  'Date',         $format);
-$worksheet[3]->write($row, $col+1,  'VM Sent',    $format);
-$worksheet[3]->write($row, $col+2,  'Uniq VM Sent',      $format);
+$worksheet[3]->write(1, $col+0,  'Date',         $format4);
+$worksheet[3]->write(1, $col+1,  'VM Sent',    $format4);
+$worksheet[3]->write(1, $col+2,  'Uniq VM Sent',      $format4);
+
+$row = 0;
+$col = 0;
+$i=1;
+$strSQLCTMv6 = "SELECT tran_dt,
+        MAX(IF(type='voice',total, 0)) as voice,
+        MAX(IF(type='uniq_voice',total, 0)) as uniq_voice
+        FROM  ctmv6_stats_dtl
+       where left(tran_dt,7) like '".$current_date."%'
+       GROUP BY tran_dt;";
+
+$sth_ctm_v6 = $dbh_ctmv6->prepare($strSQLCTMv6);
+$sth_ctm_v6->execute();
+
+while (@rowRst = $sth_ctm_v6->fetchrow()) 
+{
+   $i++;
+   $worksheet[3]->write($row+$i, $col+0,  $rowRst[0],  $formatString);
+   $worksheet[3]->write($row+$i, $col+1,  $rowRst[1],  $formatNumber);
+   $worksheet[3]->write($row+$i, $col+2,  $rowRst[2],  $formatNumber);
+} 
+
 
 
 
 $workbook->close();
  binmode STDOUT;
 
-$from = "stats\@chikka.com";
-$to = "jomai\@chikka.com,bresos\@chikka.com,jldespanol\@chikka.com";
-$cc = "glenon\@chikka.com,afaylona\@chikka.com,nbrinas\@chikka.com,jojo\@chikka.com,ra\@chikka.com";
-$to = "jojo\@chikka.com";
-$cc = "glenon\@chikka.com";
+$from = "ctm_stats\@chikka.com";
+$to = "jomai\@chikka.com,bresos\@chikka.com,jldespanol\@chikka.com,caparolma\@chikka.com";
+$cc = "dbadmins\@chikka.com,nbrinas\@chikka.com,jojo\@chikka.com,ra\@chikka.com";
+#$to = "jojo\@chikka.com";
+#$cc = "jojo\@chikka.com";
 $Subject = "CTMV6 Stats, ".$current_day;
 
 # Part using which the attachment is sent to an email #
