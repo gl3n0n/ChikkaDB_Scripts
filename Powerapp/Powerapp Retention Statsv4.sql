@@ -11,6 +11,11 @@ drop procedure if exists sp_regenerate_retention_main;
 delimiter //
 create procedure sp_regenerate_retention_main (p_trandate date)
 begin
+   set session tmp_table_size = 268435456;
+   set session max_heap_table_size = 268435456;
+   set session sort_buffer_size = 104857600;
+   set session read_buffer_size = 8388608;
+
    delete from powerapp_retention_stats where tran_dt = p_trandate;
    delete from powerapp_retention_stats_monthly where tran_dt = p_trandate;
    -- powerapp_optout_log
@@ -25,6 +30,15 @@ begin
    insert ignore into tmp_liberation_mins (phone, brand, datein ) select phone, max(brand), min(datein) from powerapp_flu.powerapp_log where datein >=  p_trandate and datein < date_add(p_trandate, interval 2 day) and plan ='MYVOLUME' group by phone;
    -- powerapp_optout_users
    insert ignore  into powerapp_optout_users (phone, brand, datein ) select phone, min(datein), min(brand) from powerapp_flu.powerapp_optout_log where datein >=  p_trandate and datein < date_add(p_trandate, interval 2 day) group by phone;
+
+   -- TNT liberation auto renewal stats
+   insert ignore into powerapp_tnt_auto_renewal_stats (tx_date, hits)
+   select left(datein,10), count(1) from powerapp_log
+   where datein >= p_trandate and datein < date_add(p_trandate, interval 1 day)
+   and   plan = 'MYVOLUME' and source = 'auto_opt_in_liberation'
+   and   brand = 'TNT'
+   group by left(datein,10);
+
    -- call sp_generate_retention_stats (p_trandate);
    -- call sp_generate_15day_retention_stats(p_trandate);
    -- call sp_generate_retention_stats_monthly (p_trandate);

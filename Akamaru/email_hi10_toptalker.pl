@@ -16,7 +16,7 @@ $current_date = $ARGV[0];
 $current_day = $ARGV[1];
 $txt_month = $ARGV[2];
 
-my $excel_file = "/home/dba_scripts/oist_stat/PowerApp_TopTalker_".$current_date.".xls";
+my $excel_file = "/home/dba_scripts/oist_stat/PowerApp_TopTalker_".$current_day.".xls";
 print $excel_file;
 
 my $dbh_hi10 = DB::DBconnect(myconstants::HI10A_DB,myconstants::HI10A_HOST,myconstants::HI10A_USER,myconstants::HI10A_PASSWORD);
@@ -25,14 +25,16 @@ my $dbh_hi10 = DB::DBconnect(myconstants::HI10A_DB,myconstants::HI10A_HOST,mycon
 my $workbook = Spreadsheet::WriteExcel->new($excel_file);
 my $strMain;
 my @mainRst;
-my $sth_hi_10;
-my @rowRst;
+my $sth_hi_10n;
+my $sth_hi_10u;
+my @rowRstn;
+my @rowRstu;
 my @nRowCtr;
 
 # Add a worksheet[0]
 $strMain  = "select 0 seq_no, 'TOP TALKER' service, 'TopTalker' service_desc union 
              select 1 seq_no, 'w/o BUYS' service, 'woBuys' service_desc order by 1,2,3";
-$sth_main = $dbh_hi10->prepare($strMain);                                                                                                  
+$sth_main = $dbh_hi10->prepare($strMain);
 $sth_main->execute();
 $nRowCtr=0;
 while (@mainRst = $sth_main->fetchrow()) {
@@ -101,12 +103,12 @@ $format3->set_border(2);
 # generate worksheets
 $strMain  = "select 0 seq_no, 'TOP TALKER' service, 'TopTalker' service_desc union 
              select 1 seq_no, 'w/o BUYS' service, 'woBuys' service_desc order by 1,2,3";
-$sth_main = $dbh_hi10->prepare($strMain);                                                                                                  
+$sth_main = $dbh_hi10->prepare($strMain);
 $sth_main->execute();
 $nRowCtr=0;
 while (@mainRst = $sth_main->fetchrow()) {
    if (@mainRst[0] == 0) {
-      $strSQLhi10 = "select phone, tx_usage, max(buys) buys, max(services) services from (
+      $strSQLhi10n = "select phone, tx_usage, max(buys) buys, max(services) services from (
                      select a.phone, a.tx_usage, 
                             group_concat(concat(b.plan, ':', b.hits) separator ' ^ ') buys, 
                             null services
@@ -125,8 +127,42 @@ while (@mainRst = $sth_main->fetchrow()) {
                      ) t1
                      group by phone, tx_usage
                      order by tx_usage desc,phone limit 20";
+
+      $strSQLhi10u = "select phone, tx_usage, max(buys) buys, max(services) services, nds_usage from (
+                     select a.phone, b.tx_usage, 
+                            group_concat(concat(c.plan, ':', c.hits) separator ' ^ ') buys, 
+                            null services, a.tx_usage nds_usage
+                     from powerapp_nds_toptalker a 
+                     left outer join powerapp_udr_toptalker b on a.tx_date=b.tx_date and a.phone = b.phone 
+                     left outer join powerapp_udr_toptalker_buys c on b.tx_date=c.tx_date and b.phone = c.phone 
+                     where a.tx_date = '".$current_day."'
+                     and   exists (select 1 from (select tx_date, phone, tx_usage from powerapp_nds_toptalker 
+                                            where tx_date = '".$current_day."' 
+                                            order by tx_usage desc limit 20
+                                           ) d 
+                             where a.tx_date=d.tx_date and a.phone = d.phone) 
+                     group by a.phone, b.tx_usage, a.tx_usage
+                     union
+                     select a.phone, b.tx_usage, 
+                            null buys, 
+                            group_concat(concat(c.service , ':', c.tx_usage) separator ' ^ ') services,
+                            a.tx_usage nds_usage
+                     from powerapp_nds_toptalker a 
+                     left outer join powerapp_udr_toptalker b on a.tx_date=b.tx_date and a.phone = b.phone 
+                     left outer join powerapp_udr_toptalker_services c on b.tx_date=c.tx_date and b.phone = c.phone  
+                     where a.tx_date = '".$current_day."'
+                     and   exists (select 1 from (select tx_date, phone, tx_usage from powerapp_nds_toptalker 
+                                                  where tx_date = '".$current_day."' 
+                                                  order by tx_usage desc limit 20
+                                                 ) d 
+                                   where a.tx_date=d.tx_date and a.phone = d.phone) 
+                     group by a.phone, b.tx_usage, a.tx_usage
+                     ) t1
+                     group by phone, tx_usage
+                     order by nds_usage desc, phone limit 20";
+
    }else{
-      $strSQLhi10 = "select phone, tx_usage, max(buys) buys, max(services) services from (
+      $strSQLhi10n = "select phone, tx_usage, max(buys) buys, max(services) services from (
                      select a.phone, a.tx_usage, 
                             group_concat(concat(b.plan, ':', b.hits) separator ' ^ ') buys, 
                             null services
@@ -146,36 +182,83 @@ while (@mainRst = $sth_main->fetchrow()) {
                      group by phone, tx_usage
                      having max(buys) is null
                      order by tx_usage desc,phone limit 20";
+
+      $strSQLhi10u = "select t2.phone, t3.tx_usage, t2.buys, t4.service, t2.tx_usage from (select phone, tx_usage, max(buys) buys, max(services) services from (
+                     select a.phone, a.tx_usage, 
+                            group_concat(concat(b.plan, ':', b.hits) separator ' ^ ') buys, 
+                            null services
+                     from powerapp_nds_toptalker a 
+                     left outer join powerapp_nds_toptalker_buys b on a.tx_date=b.tx_date and a.phone = b.phone 
+                     where a.tx_date = '".$current_day."'
+                     group by 1,2 
+                     union
+                     select a.phone, a.tx_usage, 
+                            null buys, 
+                            group_concat(concat(c.service , ':', c.tx_usage) separator ' ^ ') services
+                     from powerapp_nds_toptalker a 
+                     left outer join powerapp_nds_toptalker_services c on a.tx_date=c.tx_date and a.phone = c.phone  
+                     where a.tx_date = '".$current_day."'
+                     group by 1,2 
+                     ) t1
+                     group by phone, tx_usage
+                     having max(buys) is null
+                     order by tx_usage desc,phone limit 20) t2 left outer join powerapp_udr_toptalker t3 on t2.phone=t3.phone and t3.tx_date = '".$current_day."'
+                                                               left outer join powerapp_udr_toptalker_services t4 on (t3.phone=t4.phone and t3.tx_date=t4.tx_date)  
+                     order by t2.tx_usage desc, t2.phone";
    }
-   print "$strSQLhi10\n";
-   $sth_hi_10 = $dbh_hi10->prepare($strSQLhi10);                                                                                                  
-   $sth_hi_10->execute();
+   print "$strSQLhi10n\n";
+   print "$strSQLhi10u\n";
+   $sth_hi_10n = $dbh_hi10->prepare($strSQLhi10n);  
+   $sth_hi_10n->execute();
+   $sth_hi_10u = $dbh_hi10->prepare($strSQLhi10u);
+   $sth_hi_10u->execute();
 
    # Write a formatted and unformatted string, row and column notation.
-   $worksheet[$nRowCtr]->merge_range('B2:E2', @mainRst[1], $format2);
+   $worksheet[$nRowCtr]->merge_range('B2:E2', @mainRst[1]." - NDS", $format2);
+   $worksheet[$nRowCtr]->merge_range('G2:J2', @mainRst[1]." - UDR", $format2);
    $worksheet[$nRowCtr]->write(2, 1, 'Phone',     $format21R);
    $worksheet[$nRowCtr]->write(2, 2, 'Usage',     $format21R);
    $worksheet[$nRowCtr]->write(2, 3, 'Buys',      $format21R);
    $worksheet[$nRowCtr]->write(2, 4, 'Services',  $format21R);
+   $worksheet[$nRowCtr]->write(2, 6, 'Phone',     $format21R);
+   $worksheet[$nRowCtr]->write(2, 7, 'Usage',     $format21R);
+   $worksheet[$nRowCtr]->write(2, 8, 'Buys',      $format21R);
+   $worksheet[$nRowCtr]->write(2, 9, 'Services',  $format21R);
    $worksheet[$nRowCtr]->write(3, 1, '',        $format3);
    $worksheet[$nRowCtr]->write(3, 2, '(bytes)', $format3);
    $worksheet[$nRowCtr]->write(3, 3, '(txn)',   $format3);
    $worksheet[$nRowCtr]->write(3, 4, '',        $format3);
+   $worksheet[$nRowCtr]->write(3, 6, '',        $format3);
+   $worksheet[$nRowCtr]->write(3, 7, '(bytes)', $format3);
+   $worksheet[$nRowCtr]->write(3, 8, '(txn)',   $format3);
+   $worksheet[$nRowCtr]->write(3, 9, '',        $format3);
    $worksheet[$nRowCtr]->set_column(0,0,9);
    $worksheet[$nRowCtr]->set_column(1,2,14);
    $worksheet[$nRowCtr]->set_column(3,3,30);
    $worksheet[$nRowCtr]->set_column(4,4,80);
+   $worksheet[$nRowCtr]->set_column(5,5,2);
+   $worksheet[$nRowCtr]->set_column(6,7,14);
+   $worksheet[$nRowCtr]->set_column(8,8,30);
+   $worksheet[$nRowCtr]->set_column(9,9,80);
 
    $row = 2;
    $col = 0;
    $i=1;
-
-   while (@rowRst = $sth_hi_10->fetchrow()) {
+   while (@rowRstn = $sth_hi_10n->fetchrow()) {
       $i++;
-      $worksheet[$nRowCtr]->write($row+$i, $col+1,  $rowRst[0],  $format1n);
-      $worksheet[$nRowCtr]->write($row+$i, $col+2,  $rowRst[1],  $format1);
-      $worksheet[$nRowCtr]->write($row+$i, $col+3,  $rowRst[2],  $format1p);
-      $worksheet[$nRowCtr]->write($row+$i, $col+4,  $rowRst[3],  $format1p);
+      $worksheet[$nRowCtr]->write($row+$i, $col+1,  $rowRstn[0],  $format1n);
+      $worksheet[$nRowCtr]->write($row+$i, $col+2,  $rowRstn[1],  $format1);
+      $worksheet[$nRowCtr]->write($row+$i, $col+3,  $rowRstn[2],  $format1p);
+      $worksheet[$nRowCtr]->write($row+$i, $col+4,  $rowRstn[3],  $format1p);
+   }
+
+   $i=1;
+   while (@rowRstu = $sth_hi_10u->fetchrow()) {
+      $i++;
+      $worksheet[$nRowCtr]->write($row+$i, $col+6,  $rowRstu[0],  $format1n);
+      $worksheet[$nRowCtr]->write($row+$i, $col+7,  $rowRstu[1],  $format1);
+      $worksheet[$nRowCtr]->write($row+$i, $col+8,  $rowRstu[2],  $format1p);
+      $worksheet[$nRowCtr]->write($row+$i, $col+9,  $rowRstu[3],  $format1p);
    }
    $nRowCtr++;
 }
@@ -184,8 +267,8 @@ $workbook->close();
  binmode STDOUT;
 
 $from = "powerapp_stats\@chikka.com";
-$to = "glenon\@chikka.com";
-$cc = "dbadmins\@chikka.com";
+$to = "victor\@chikka.com";
+$cc = "dbadmins\@chikka.com,nbrinas\@chikka.com";
 #$to = "glenon\@chikka.com";
 #$cc = "glenon\@chikka.com";
 $Subject = "PowerApp Top Talker, ".$current_day;
@@ -225,5 +308,6 @@ $msg = MIME::Lite->new(
 
 print "Mail Sent\n";
 $msg->send; # send via default
+
 
 

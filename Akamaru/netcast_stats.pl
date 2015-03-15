@@ -119,10 +119,10 @@ $workbook->close();
  binmode STDOUT;
 
 $from = "netcast_stats\@chikka.com";
-$to = "caparolma\@chikka.com, mibraga\@chikka.com,zcabatuan\@chikka.com";
-$cc = "dbadmins\@chikka.com, ra\@chikka.com";
-#$to = "jojo\@chikka.com";
-#$cc = "jojo\@chikka.com";
+#$to = "caparolma\@chikka.com, mibraga\@chikka.com,zcabatuan\@chikka.com";
+#$cc = "dbadmins\@chikka.com, ra\@chikka.com";
+$to = "jojo\@chikka.com";
+$cc = "jojo\@chikka.com";
 $Subject = "Netcast Stats, ".$current_date;
 
 # Part using which the attachment is sent to an email #

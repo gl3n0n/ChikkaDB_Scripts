@@ -123,9 +123,9 @@ $worksheet[3] = $workbook->add_worksheet("Buys");
                          and    a.service = b.service 
                          and    b.type='RX'
                          and    a.service = '".@mainRst[0]."'
-                         and    left(a.datein,7) = '".$current_date."') y
+                         and    left(a.datein,7) >= '".$current_date."') y
                   on     (x.tx_date=y.datein)
-                  where  left(x.tx_date,7) = '".$current_date."'
+                  where  left(x.tx_date,7) >= '".$current_date."'
                   order  by x.tx_date";
       # print "SQL: $strSQL\n";
       $sth_sql = $dbh_hi10->prepare($strSQL);                                                                                                  
@@ -188,10 +188,10 @@ $worksheet[3] = $workbook->add_worksheet("Buys");
                          where  a.tran_dt >= concat('".$current_date."', '-01') 
                          and    a.plan=b.plan
                          and    b.service = '".@mainRst[0]."'
-                         and    left(a.tran_dt,7) = '".$current_date."'
+                         and    left(a.tran_dt,7) >= '".$current_date."'
                          group  by 1 ) y
                   on     (x.tx_date=y.datein)
-                  where  left(x.tx_date,7) = '".$current_date."'
+                  where  left(x.tx_date,7) >= '".$current_date."'
                   order  by x.tx_date";
       # print "SQL: $strSQL\n";
       $sth_sql = $dbh_hi10->prepare($strSQL);                                                                                                  
@@ -223,7 +223,7 @@ $workbook->close();
 # END: Create Excel workbook
 
 $from = "powerapp_stats\@chikka.com";
-$to = "victor\@chikka.com,ps.java\@chikka.com,jomai\@chikka.com,ra\@chikka.com,ian\@chikka.com";
+$to = "glenon\@chikka.com";
 $cc = "dbadmins\@chikka.com";
 #$to = "glenon\@chikka.com";
 #$cc = "glenon\@chikka.com";

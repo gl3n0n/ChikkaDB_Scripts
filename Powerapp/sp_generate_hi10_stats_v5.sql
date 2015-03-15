@@ -101,23 +101,51 @@ begin
 
     if @tran_dt = last_day(@tran_dt) then
        select count(distinct phone)
-       into  @NumUniq30d
+       into  @NumUniq30d_tnt
        from powerapp_log
-       where left(datein,7) = left(@tran_dt, 7);
+       where left(datein,7) = left(@tran_dt, 7)
+       and   brand = 'TNT';
+       select count(distinct phone)
+       into  @NumUniq30d_buddy
+       from powerapp_log
+       where left(datein,7) = left(@tran_dt, 7)
+       and   brand = 'BUDDY';
+       select count(distinct phone)
+       into  @NumUniq30d_postpd
+       from powerapp_log
+       where left(datein,7) = left(@tran_dt, 7)
+       and   brand = 'POSTPD';
     else
        select count(distinct phone)
-       into  @NumUniq30d
+       into  @NumUniq30d_tnt
        from powerapp_log
        where datein >= date_sub(@tran_dt, interval 30 day)
-       and datein < @tran_nw;
+       and datein < @tran_nw
+       and   brand = 'TNT';
+       select count(distinct phone)
+       into  @NumUniq30d_buddy
+       from powerapp_log
+       where datein >= date_sub(@tran_dt, interval 30 day)
+       and datein < @tran_nw
+       and   brand = 'BUDDY';
+       select count(distinct phone)
+       into  @NumUniq30d_postpd
+       from powerapp_log
+       where datein >= date_sub(@tran_dt, interval 30 day)
+       and datein < @tran_nw
+       and   brand = 'POSTPD';
     end if;
+    SET @NumUniq30d = IFNULL(@NumUniq30d_tnt,0) + IFNULL(@NumUniq30d_buddy,0) + IFNULL(@NumUniq30d_postpd,0) ;
 
     update powerapp_dailyrep
     set    num_optout= IFNULL(@vNumOptout,0),
            concurrent_max_tm= IFNULL(@vTimeIn,'00:00'),
            concurrent_max_subs=IFNULL(@vNumSubs,0),
            concurrent_avg_subs=IFNULL(@vAvgSubs,0),
-           num_uniq_30d=IFNULL(@NumUniq30d,0)
+           num_uniq_30d=IFNULL(@NumUniq30d,0),
+           num_uniq_30d_tnt=IFNULL(@NumUniq30d_tnt,0),
+           num_uniq_30d_buddy=IFNULL(@NumUniq30d_buddy,0),
+           num_uniq_30d_postpd=IFNULL(@NumUniq30d_postpd,0)
     where  tran_dt = @tran_dt;
 
     -- PREPAID, TNT, SUN      App Deals - 24hrs
@@ -367,6 +395,8 @@ begin
               @coc_hits_24,         @coc_uniq_24,
               @youtube_hits_30,     @youtube_uniq_30);
    END WHILE;
+   -- generate report per brand
+   call sp_generate_hi10_brand_stats(@tran_dt);
 END;
 //
 

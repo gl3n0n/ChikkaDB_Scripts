@@ -4079,9 +4079,9 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
 $workbook->close();
 binmode STDOUT;
 
-$from = "stats\@chikka.com";
+$from = "powerapp_stats\@chikka.com";
 $to = "jomai\@chikka.com,ian\@chikka.com,victor\@chikka.com,speralta\@chikka.com";
-$cc = "dbadmins\@chikka.com,jldespanol\@chikka.com";
+$cc = "dbadmins\@chikka.com";
 #$to = "glenon\@chikka.com";
 #$cc = "glenon\@chikka.com";
 $Subject = "PowerApp Stats (Hourly), ".$current_day;

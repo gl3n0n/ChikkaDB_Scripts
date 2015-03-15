@@ -111,7 +111,7 @@ while (@mainRst = $sth_main->fetchrow()) {
                      and    b.datein  = c.datein 
                      and    b.service = c.service 
                      and    b.type='RX'
-                     and    left(a.datein,7) = '".$current_date."'
+                     and    left(a.datein,7) >= '".$current_date."'
                      group  by a.datein
                      order  by a.datein";
    }else{
@@ -128,7 +128,7 @@ while (@mainRst = $sth_main->fetchrow()) {
                      and    b.service = c.service 
                      and    b.type='RX'
                      and    a.service = '".@mainRst[1]."'
-                     and    left(a.datein,7) = '".$current_date."'
+                     and    left(a.datein,7) >= '".$current_date."'
                      order  by a.datein";
    }
    print "$strSQLhi10\n";
@@ -179,7 +179,7 @@ $workbook->close();
  binmode STDOUT;
 
 $from = "powerapp_stats\@chikka.com";
-$to = "victor\@chikka.com";
+$to = "glenon\@chikka.com";
 $cc = "dbadmins\@chikka.com";
 $to = "glenon\@chikka.com";
 $cc = "glenon\@chikka.com";

@@ -35,6 +35,13 @@ delete from tmp_1d_mins where phone like '63918337%';
 Plus this MIN: 639493638683 
 delete from tmp_1d_mins where phone = '639493638683';
 
+delete from tmp_bcast_mins where phone like '63919220%';
+delete from tmp_bcast_mins where phone like '63937337%';
+delete from tmp_bcast_mins where phone like '639189%';
+delete from tmp_bcast_mins where phone like '639209%';
+delete from tmp_bcast_mins where phone like '639209%';
+
+
 truncate table tmp_plan_users;
 insert into tmp_plan_users select a.phone, a.brand, 'POWERAPP', '2014-10-21', 'powerapp' from powerapp_users_apn a, tmp_chikka_apn b 
 where a.phone = b.phone
@@ -70,6 +77,18 @@ create table tmp_plan_users_1021 like tmp_plan_users;
 insert into tmp_plan_users_1021 select * from tmp_plan_users;
 select bcast_dt, plan, brand, source, countmp_plan_users_102t(1) from tmp_plan_users_1021 group by 1,2,3,4;
 
+
+
+
+insert into tmp_plan_users_0305 select phone, brand, 'FY5', '2015-03-05', source from tmp_bcast_mins a 
+where brand='TNT' and bcasted=0
+and   not exists (select 1 from tmp_plan_users_0303 b where b.phone = a.phone) 
+and   not exists (select 1 from tmp_plan_users_0304 b where b.phone = a.phone) 
+order by datein desc limit 1500000;
+
+select phone into outfile '/tmp/TNT_20150305.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users_0305 where brand = 'TNT' and plan = 'FY5';
+
+
 select bcast_dt, plan, brand, count(1) from tmp_plan_users group by 1,2,3;
 select phone into outfile '/tmp/TNT_20150115.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'TNT' and plan = 'YOUTUBE';
 select phone into outfile '/tmp/BUDDY_20150115.csv' fields terminated by ',' lines terminated by '\n' from tmp_plan_users where brand = 'BUDDY' and plan = 'ALLDAY';
@@ -83,6 +102,8 @@ set session sort_buffer_size = 104857600;
 set session read_buffer_size = 8388608;
 select phone into outfile '/tmp/DEARPOPE_20150120.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein > '2015-01-14' and plan = 'DEARPOPE' group by 1;
 
+
+select phone into outfile '/tmp/TNT_on_APN_20150225.csv' fields terminated by ',' lines terminated by '\n'  from powerapp_users_apn a, tmp_chikka_apn b where a.phone = b.phone and a.brand = 'TNT';
 
 scp gmlenon@172.17.250.40:/tmp/*20150115.csv /tmp/.
 scp /tmp/*20150115.csv gmlenon@172.17.250.158:/tmp/.

@@ -94,7 +94,7 @@ $worksheet[0]->merge_range('AY2:BN2', 'SUN',          $format2);
 $worksheet[0]->merge_range('BP2:BW2', 'REGISTRATION', $format2);
 $worksheet[0]->merge_range('BY2:CC2', 'MIGRATION',    $format2);
 $worksheet[0]->merge_range('CE2:CH2', 'LOGIN',        $format2);
-$worksheet[0]->merge_range('CJ2:CK2', 'USSD',         $format2);
+$worksheet[0]->merge_range('CJ2:CM2', 'USSD',         $format2);
 
 $worksheet[0]->merge_range('B3:E3',    'HITS',                               $format3);
 $worksheet[0]->merge_range('F3:I3',    'Unique Charged',                     $format3);
@@ -120,7 +120,8 @@ $worksheet[0]->merge_range('BL3:BN3',  'Migration',                          $fo
 $worksheet[0]->merge_range('BP3:BW3', 'per Carrier or SN', $format3);
 $worksheet[0]->merge_range('BY3:CC3', ' ',                 $format3);
 $worksheet[0]->merge_range('CE3:CH3', 'Sign-in via',       $format3);
-$worksheet[0]->merge_range('CJ3:CK3', ' ',                 $format3);
+$worksheet[0]->merge_range('CJ3:CK3', '*555',              $format3);
+$worksheet[0]->merge_range('CL3:CM3', '*118',              $format3);
 
 $worksheet[0]->set_column(0,0,10);
 $worksheet[0]->set_column(1,12,8);
@@ -238,6 +239,9 @@ $worksheet[0]->write($row+$i, $col+85, 'Total',    $format);
 #USSD
 $worksheet[0]->write($row+$i, $col+87, 'Trans (MT)', $format);
 $worksheet[0]->write($row+$i, $col+88, 'USSD',       $format);
+#USSD
+$worksheet[0]->write($row+$i, $col+89, 'Trans (MT)', $format);
+$worksheet[0]->write($row+$i, $col+90, 'USSD',       $format);
 
 #$row = 2;
 #$col = 0;
@@ -361,7 +365,7 @@ $i=1;
 $strSQLCTMv6 = "select reg_globe, reg_smart, reg_sun, reg_fb, reg_tw, reg_go, reg_li, reg_total, 
                        regm_globe, regm_smart, regm_sun, regm_pc, regm_total, 
                        sign_and, sign_ios, sign_web, sign_total,
-                       ussd_mt, ussd_hits
+                       ussd_mt, ussd_hits, ussd_118_mt, ussd_118_hits
                 from ctmv6_registration_stats 
                 where left(tran_dt,7) = '".$current_date."' 
                 order by tran_dt";
@@ -389,6 +393,8 @@ while (@rowRst = $sth_ctm_v6->fetchrow()) {
    $worksheet[0]->write($row+$i, $col+85, $rowRst[16], $formatNumber);
    $worksheet[0]->write($row+$i, $col+87, $rowRst[17], $formatNumber);
    $worksheet[0]->write($row+$i, $col+88, $rowRst[18], $formatNumber);
+   $worksheet[0]->write($row+$i, $col+89, $rowRst[19], $formatNumber);
+   $worksheet[0]->write($row+$i, $col+90, $rowRst[20], $formatNumber);
 }
 
 # $worksheet[1] = $workbook->add_worksheet('Reg_per_Country');
@@ -610,10 +616,10 @@ $workbook->close();
  binmode STDOUT;
 
 $from = "ctm_stats\@chikka.com";
-$to = "jomai\@chikka.com,bresos\@chikka.com,jldespanol\@chikka.com,caparolma\@chikka.com";
-$cc = "dbadmins\@chikka.com,nbrinas\@chikka.com,jojo\@chikka.com,ra\@chikka.com";
-#$to = "jojo\@chikka.com";
-#$cc = "jojo\@chikka.com";
+$to = "jomai\@chikka.com,bresos\@chikka.com,caparolma\@chikka.com";
+$cc = "dbadmins\@chikka.com,nbrinas\@chikka.com,kpsese\@chikka.com,ra\@chikka.com";
+#$to = "glenon\@chikka.com";
+#$cc = "glenon\@chikka.com";
 $Subject = "CTMV6 Stats, ".$current_day;
 
 # Part using which the attachment is sent to an email #

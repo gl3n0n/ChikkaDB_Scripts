@@ -19,11 +19,13 @@ $txt_month = $ARGV[2];
 my $excel_file = "/home/dba_scripts/oist_stat/PowerApp_stats_".$current_date.".xls";
 print $excel_file;
 
-my $dbh_hi10 = DB::DBconnect(myconstants::HI10_DB,myconstants::HI10_HOST,myconstants::HI10_USER,myconstants::HI10_PASSWORD);
+my $dbh_hi10  = DB::DBconnect(myconstants::HI10_DB,myconstants::HI10_HOST,myconstants::HI10_USER,myconstants::HI10_PASSWORD);
+my $dbh_hi10a = DB::DBconnect(myconstants::HI10A_DB,myconstants::HI10A_HOST,myconstants::HI10A_USER,myconstants::HI10A_PASSWORD);
 
 # Create a new Excel workbook
 my $workbook = Spreadsheet::WriteExcel->new($excel_file);
 my $sth_hi_10;
+my $sth_hi_10a;
 my @rowRst;
 
 # Add a worksheet
@@ -169,12 +171,22 @@ $strSQLhi10 = "select DATE_FORMAT(a.tran_dt,'%m/%d/%Y') tran_dt,
                       IF(a.tran_dt=last_day(a.tran_dt), concat(date_format(concat(left(a.tran_dt,8),'01') , '%b-%d'), ' to ', date_format(a.tran_dt, '%b-%d')), 
                                                         concat(date_format(date_sub(a.tran_dt, interval 30 day), '%b-%d'), ' to ', date_format(a.tran_dt, '%b-%d'))
                         ) period_covered,
-                      a.buddy_uniq, a.postpd_uniq, a.tnt_uniq, a.sun_uniq, a.tnt_auto_rn, a.buddy_auto_rn
+                      a.buddy_uniq, a.postpd_uniq, a.tnt_uniq, a.sun_uniq, a.tnt_auto_rn, a.buddy_auto_rn,
+                      c.from_selected, c.to_selected
                from powerapp_dailyrep a left outer join powerapp_concurrent_subs b on a.tran_dt = b.tran_dt 
-               where left(a.tran_dt,7) = '".$current_date."' 
+                                        left outer join upload_download_bandwidth c on a.tran_dt = c.tran_dt 
+               where left(a.tran_dt,7) = '".$current_date."' and a.tran_dt < curdate() 
                order by a.tran_dt";
 $sth_hi_10 = $dbh_hi10->prepare($strSQLhi10);
 $sth_hi_10->execute();
+
+$strSQLhi10a = "select DATE_FORMAT(a.tran_dt,'%m/%d/%Y') tran_dt, 
+                      a.buddy, a.postpd, a.tnt, a.others, a.total
+               from powerapp_apn_stats a
+               where left(a.tran_dt,7) = '".$current_date."' 
+               order by a.tran_dt";
+$sth_hi_10a = $dbh_hi10a->prepare($strSQLhi10a);
+$sth_hi_10a->execute();
 
 # Write a formatted and unformatted string, row and column notation.
 $row = 1;
@@ -187,6 +199,8 @@ $worksheet[0]->merge_range($row, $col+44, $row, $col+47, 'MINs in Chikka APN',  
 $worksheet[0]->merge_range($row, $col+49, $row, $col+51, 'Unique Subs',             $format2);
 $worksheet[0]->merge_range($row, $col+53, $row, $col+56, 'Unique Subs per Brand',   $format2);
 $worksheet[0]->merge_range($row, $col+58, $row, $col+59, 'Liberation Auto-Renewal', $format2);
+$worksheet[0]->merge_range($row, $col+61, $row, $col+65, 'MINs in Chikka APN', $format2);
+$worksheet[0]->merge_range($row, $col+67, $row, $col+68, 'Powerapp BANDWIDTH', $format2);
 
 $worksheet[0]->set_column(0,0,9);
 $worksheet[0]->set_column(1,1,9);
@@ -222,6 +236,10 @@ $worksheet[0]->set_column(52,52,1);
 $worksheet[0]->set_column(53,56,9);
 $worksheet[0]->set_column(57,57,1);
 $worksheet[0]->set_column(58,59,12);
+$worksheet[0]->set_column(60,60,1);
+$worksheet[0]->set_column(61,65,12);
+$worksheet[0]->set_column(66,66,1);
+$worksheet[0]->set_column(67,68,16);
 #
 $worksheet[0]->write($row+$i, $col,     'DATE',           $format);
 $worksheet[0]->write($row+$i, $col+1,   'UNLI',           $format);
@@ -284,6 +302,25 @@ $worksheet[0]->write($row+$i, $col+56,  'SUN',            $format);
 $worksheet[0]->write($row+$i, $col+58,  'TNT',            $format);
 $worksheet[0]->write($row+$i, $col+59,  'BUDDY',          $format);
 
+$worksheet[0]->write($row+$i, $col+61,  'PREPAID',        $format);
+$worksheet[0]->write($row+$i, $col+62,  'POSTPAID',       $format);
+$worksheet[0]->write($row+$i, $col+63,  'TNT',            $format);
+$worksheet[0]->write($row+$i, $col+64,  'OTHERS',         $format);
+$worksheet[0]->write($row+$i, $col+65,  'TOTAL',          $format);
+
+$worksheet[0]->write($row+$i, $col+67,  'RECEIVED',       $format);
+$worksheet[0]->write($row+$i, $col+68,  'TRANSMIT',     $format);
+
+while (@rowRst = $sth_hi_10a->fetchrow()) {
+   $i++;
+   $worksheet[0]->write($row+$i, $col+61,   $rowRst[1],   $format1);
+   $worksheet[0]->write($row+$i, $col+62,   $rowRst[2],   $format1);
+   $worksheet[0]->write($row+$i, $col+63,   $rowRst[3],   $format1);
+   $worksheet[0]->write($row+$i, $col+64,   $rowRst[4],   $format1);
+   $worksheet[0]->write($row+$i, $col+65,   $rowRst[5],   $format1);
+}
+
+$i=1;
 while (@rowRst = $sth_hi_10->fetchrow()) {
    $i++;
    $worksheet[0]->write($row+$i, $col,     $rowRst[0],   $format1);
@@ -340,6 +377,8 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
    $worksheet[0]->write($row+$i, $col+56,  $rowRst[51],  $format1);
    $worksheet[0]->write($row+$i, $col+58,  $rowRst[52],  $format1);
    $worksheet[0]->write($row+$i, $col+59,  $rowRst[53],  $format1);
+   $worksheet[0]->write($row+$i, $col+67,  $rowRst[54],  $format1);
+   $worksheet[0]->write($row+$i, $col+68,  $rowRst[55],  $format1);
 }
 
 $strSQLhi10 = "select DATE_FORMAT(tran_dt,'%b %Y'), num_subs 
@@ -632,9 +671,9 @@ $workbook->close();
 
 $from = "powerapp_stats\@chikka.com";
 $to = "victor\@chikka.com,ps.java\@chikka.com,jomai\@chikka.com,ra\@chikka.com,ian\@chikka.com";
-$cc = "dbadmins\@chikka.com,jldespanol\@chikka.com";
-#$to = "glenon\@chikka.com";
-#$cc = "glenon\@chikka.com";
+$cc = "dbadmins\@chikka.com";
+$to = "jomai\@chikka.com";
+$cc = "glenon\@chikka.com";
 $Subject = "PowerApp Stats, ".$current_day;
 
 # Part using which the attachment is sent to an email #
