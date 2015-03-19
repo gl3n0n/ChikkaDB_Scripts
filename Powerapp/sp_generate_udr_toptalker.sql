@@ -18,17 +18,17 @@ begin
 
    create temporary table if not exists tmp_top_mins (phone varchar(12) not null, tx_usage bigint(18) default 0 not null, primary key (phone));
    create temporary table if not exists tmp_top_100 (phone varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx(phone));
-   create temporary table if not exists tmp_top_services (service varchar(12) not null, phone varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx(phone));
-   create temporary table if not exists tmp_top_sources (source varchar(12) not null, phone varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx(phone));
-   create temporary table if not exists tmp_services_summary (tx_date date not null, service varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx(tx_date,service));
-   create temporary table if not exists tmp_sources_summary (tx_date date not null, source varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx(tx_date,source));
+   create temporary table if not exists tmp_top_services (service varchar(40) not null, phone varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx(phone));
+   create temporary table if not exists tmp_top_sources (source varchar(40) not null, phone varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx(phone));
+   create temporary table if not exists tmp_services_summary (tx_date date not null, service varchar(40) not null, tx_usage bigint(18) default 0 not null, key phone_idx(tx_date,service));
+   create temporary table if not exists tmp_sources_summary (tx_date date not null, source varchar(40) not null, tx_usage bigint(18) default 0 not null, key phone_idx(tx_date,source));
    truncate table tmp_top_mins;
    truncate table tmp_top_100;
    truncate table tmp_top_services;
    truncate table tmp_top_sources;
    truncate table tmp_services_summary;
    truncate table tmp_sources_summary;
-   
+
    -- generate TOP 2000 MINs per UDR table
    set @nTableCnt  = 50;
    set @nCtr  = 0;
@@ -66,7 +66,7 @@ begin
    select 'Second Pass....' Process;
 
    -- generate TOP 100 MINs
-   insert into powerapp_udr_toptalker select p_trandate, phone, sum(tx_usage) from tmp_top_100 group by 1,2 order by 3 desc limit 1000;
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) select p_trandate, phone, sum(tx_usage) from tmp_top_100 group by 1,2 order by 3 desc limit 1000;
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) select p_trandate, phone, tx_usage from powerapp_nds_toptalker a where tx_date = p_trandate                           and not exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and b.tx_date = p_trandate) order by tx_usage desc limit 100; 
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) select p_trandate, phone, tx_usage from powerapp_nds_toptalker a where tx_date = date_sub(p_trandate, interval 1 day) and not exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and b.tx_date = p_trandate) order by tx_usage desc limit 100; 
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) select p_trandate, phone, tx_usage from powerapp_nds_toptalker a where tx_date = date_sub(p_trandate, interval 2 day) and not exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and b.tx_date = p_trandate) order by tx_usage desc limit 100; 
@@ -175,6 +175,13 @@ begin
    and    exists (select 1 from powerapp_udr_toptalker b where b.tx_date = p_trandate and a.phone = b.phone)
    group by left(datein,10), phone, plan;
 
+   update powerapp_udr_toptalker a 
+   set w_buys=1 
+   where tx_date = p_trandate 
+   and   exists (select 1 from powerapp_udr_toptalker_buys b 
+                 where a.tx_date=b.tx_date and a.phone=b.phone);
+
+   call sp_process_udr_wo_buys(p_trandate);
    select 'Done ....' Process;
 end;
 //
@@ -183,6 +190,61 @@ delimiter ;
 GRANT EXECUTE ON PROCEDURE `archive_powerapp_flu`.`sp_generate_udr_toptalker` TO 'stats'@'localhost' ;
 
 
+drop procedure if exists sp_process_udr_wo_buys;
+delimiter //
+create procedure sp_process_udr_wo_buys (in p_trandate date)
+begin
+
+   declare vPlan Varchar(100);
+   declare vPhone Varchar(12);
+   declare done_p, nCnt int default 0;
+   declare c_wo_buys cursor for 
+      select phone from powerapp_udr_toptalker 
+      where  tx_date = p_trandate
+      and    w_buys=0;
+   declare continue handler for sqlstate '02000' set done_p = 1;
+
+
+   set session tmp_table_size = 268435456;
+   set session max_heap_table_size = 268435456;
+   set session sort_buffer_size = 104857600;
+   set session read_buffer_size = 8388608;
+
+   OPEN c_wo_buys;
+   REPEAT
+   FETCH c_wo_buys into vPhone;
+      set vPlan = NULL;
+      set nCnt = 1;
+      begin
+         declare continue handler for sqlstate '02000' set nCnt = 0;
+         select concat(plan, '^', start_tm, '^', end_tm) into vPlan 
+         from powerapp_log 
+         where datein > date_sub(p_trandate, interval 3 day)
+         and   end_tm >= p_trandate
+         and   start_tm <= p_trandate
+         and   phone = vPhone
+         limit 1; 
+      end;
+      if vPlan is not null then
+         update powerapp_udr_toptalker
+         set    w_plan=vPlan
+         where  tx_date = p_trandate
+         and    phone = vPhone;
+      end if;
+   UNTIL done_p
+   END REPEAT;
+end;
+//
+delimiter ;
+
+call sp_generate_udr_toptalker('2015-03-15');
+call sp_process_udr_wo_buys('2015-03-15');
+
+   update powerapp_udr_toptalker a 
+   set w_buys=1 
+   where tx_date = '2015-03-15' 
+   and   exists (select 1 from powerapp_udr_toptalker_buys b 
+                 where a.tx_date=b.tx_date and a.phone=b.phone);
 truncate table powerapp_udr_toptalker;
 truncate table powerapp_udr_toptalker_services;
 truncate table powerapp_udr_toptalker_sources;
@@ -192,20 +254,20 @@ truncate table powerapp_udr_sources_summary;
 call sp_generate_udr_toptalker('2015-03-08');
 
 
-create temporary table tmp_phones select tx_date, phone, tx_usage from powerapp_nds_toptalker where tx_date='2015-03-08' order by tx_usage desc limit 20;
+create temporary table tmp_phones select tx_date, phone, tx_usage from powerapp_nds_toptalker where tx_date='2015-03-12' order by tx_usage desc limit 20;
 alter table tmp_phones add key (tx_date, phone);
-select a.*, b.* from tmp_phones a left outer join powerapp_udr_toptalker b on a.phone=b.phone and a.tx_date=b.tx_date order by a.tx_usage desc;
+select a.*, b.*, a.tx_usage-b.tx_usage tx_diff from tmp_phones a left outer join powerapp_udr_toptalker b on a.phone=b.phone and a.tx_date=b.tx_date order by a.tx_usage desc;
 
 delete from tmp_phones;
 insert into tmp_phones select tx_date, phone, tx_usage from powerapp_nds_toptalker where tx_date='2015-03-10' order by tx_usage desc limit 20;
 select a.phone, a.tx_date, a.tx_usage nds_usage, b.tx_date, ifnull(b.tx_usage,0) udr_usage
 from   tmp_phones a left outer join powerapp_udr_toptalker b 
-on  a.phone=b.phone and b.tx_date='2015-03-10'
+on  a.phone=b.phone and b.tx_date='2015-03-12'
 order by a.tx_usage desc;
 
 select a.phone, a.tx_date, a.tx_usage nds_usage, b.tx_date, ifnull(b.tx_usage,0) udr_usage
 from   tmp_phones a left outer join powerapp_nds_toptalker b 
-on  a.phone=b.phone and b.tx_date='2015-03-08'
+on  a.phone=b.phone and b.tx_date='2015-03-12'
 order by a.tx_usage desc;
 
 +--------------+------------+------------+------------+-----------+------------+-----------+------------+-----------+
@@ -260,3 +322,4 @@ order by a.tx_usage desc;
 +--------------+------------+------------+------------+-----------+------------+-----------+
 20 rows in set (0.01 sec)
 
+Tel No. 282-8812

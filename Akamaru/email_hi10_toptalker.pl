@@ -162,49 +162,31 @@ while (@mainRst = $sth_main->fetchrow()) {
                      order by nds_usage desc, phone limit 20";
 
    }else{
-      $strSQLhi10n = "select phone, tx_usage, max(buys) buys, max(services) services from (
-                     select a.phone, a.tx_usage, 
-                            group_concat(concat(b.plan, ':', b.hits) separator ' ^ ') buys, 
-                            null services
-                     from powerapp_nds_toptalker a 
-                     left outer join powerapp_nds_toptalker_buys b on a.tx_date=b.tx_date and a.phone = b.phone 
-                     where a.tx_date = '".$current_day."'
-                     group by 1,2 
-                     union
+      $strSQLhi10n = "select phone, tx_usage, null buys, max(services) services from (
                      select a.phone, a.tx_usage, 
                             null buys, 
                             group_concat(concat(c.service , ':', c.tx_usage) separator ' ^ ') services
                      from powerapp_nds_toptalker a 
+                     inner join powerapp_udr_toptalker b on a.tx_date=b.tx_date and a.phone = b.phone and b.w_buys = 0 and b.w_plan is null
                      left outer join powerapp_nds_toptalker_services c on a.tx_date=c.tx_date and a.phone = c.phone  
                      where a.tx_date = '".$current_day."'
                      group by 1,2 
                      ) t1
                      group by phone, tx_usage
-                     having max(buys) is null
                      order by tx_usage desc,phone limit 20";
 
-      $strSQLhi10u = "select t2.phone, t3.tx_usage, t2.buys, t4.service, t2.tx_usage from (select phone, tx_usage, max(buys) buys, max(services) services from (
-                     select a.phone, a.tx_usage, 
-                            group_concat(concat(b.plan, ':', b.hits) separator ' ^ ') buys, 
-                            null services
-                     from powerapp_nds_toptalker a 
-                     left outer join powerapp_nds_toptalker_buys b on a.tx_date=b.tx_date and a.phone = b.phone 
-                     where a.tx_date = '".$current_day."'
-                     group by 1,2 
-                     union
+      $strSQLhi10u = "select phone, udr_usage, null buys, max(services) services, tx_usage from (
                      select a.phone, a.tx_usage, 
                             null buys, 
-                            group_concat(concat(c.service , ':', c.tx_usage) separator ' ^ ') services
+                            group_concat(concat(c.service , ':', c.tx_usage) separator ' ^ ') services, b.tx_usage udr_usage
                      from powerapp_nds_toptalker a 
-                     left outer join powerapp_nds_toptalker_services c on a.tx_date=c.tx_date and a.phone = c.phone  
-                     where a.tx_date = '".$current_day."'
+                     inner join powerapp_udr_toptalker b on a.tx_date=b.tx_date and a.phone = b.phone and b.w_buys = 0 and b.w_plan is null
+                     left outer join powerapp_udr_toptalker_services c on a.tx_date=c.tx_date and a.phone = c.phone
+                     where a.tx_date = ''".$current_day."'
                      group by 1,2 
                      ) t1
-                     group by phone, tx_usage
-                     having max(buys) is null
-                     order by tx_usage desc,phone limit 20) t2 left outer join powerapp_udr_toptalker t3 on t2.phone=t3.phone and t3.tx_date = '".$current_day."'
-                                                               left outer join powerapp_udr_toptalker_services t4 on (t3.phone=t4.phone and t3.tx_date=t4.tx_date)  
-                     order by t2.tx_usage desc, t2.phone";
+                     group by phone, udr_usage, tx_usage
+                     order by tx_usage desc,phone limit 20";
    }
    print "$strSQLhi10n\n";
    print "$strSQLhi10u\n";
