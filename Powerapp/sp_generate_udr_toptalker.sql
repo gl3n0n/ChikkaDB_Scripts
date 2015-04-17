@@ -126,19 +126,8 @@ begin
          DEALLOCATE PREPARE stmt;
 
          SET @vSql = '';
-         SET @vSql = concat('insert into powerapp_udr_toptalker_log (tx_date, phone, source, service, rx, tx, b_usage) ',
-                            'select tx_date, phone, source, service, rx, tx, b_usage ',
-                            'from   test.udr_', @nCtr, ' a ',
-                            'where  tx_date = ''', p_trandate, ''' ',
-                            'and    exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and a.tx_date=b.tx_date) ',
-                            'and    b_usage > 0');
-         PREPARE stmt FROM @vSql;
-         EXECUTE stmt;
-         DEALLOCATE PREPARE stmt;
-
-         SET @vSql = '';
-         SET @vSql = concat('insert into powerapp_udr_toptalker_log (tx_date, phone, source, service, rx, tx, b_usage) ',
-                            'select tx_date, phone, source, service, rx, tx, b_usage ',
+         SET @vSql = concat('insert into powerapp_udr_toptalker_log (tx_date, phone, source, service, rx, tx, b_usage, tx_time, filename) ',
+                            'select tx_date, phone, source, service, rx, tx, b_usage, tx_time, filename ',
                             'from   test.udr_', @nCtr, ' a ',
                             'where  tx_date = ''', p_trandate, ''' ',
                             'and    exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and a.tx_date=b.tx_date) ',

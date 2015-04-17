@@ -7,6 +7,7 @@ begin
    set session sort_buffer_size = 104857600;
    set session read_buffer_size = 8388608;
 
+   delete from powerapp_nds_toptalker where tx_date=  p_trandate;
    insert into powerapp_nds_toptalker (tx_date, phone, transmit, received, tx_usage)
    select tx_date, phone, sum(transmit), sum(received), sum(transmit+received)
    from   powerapp_nds_log
@@ -15,6 +16,7 @@ begin
    order  by 5 desc
    limit 1000;
 
+   delete from powerapp_nds_toptalker_services where tx_date=  p_trandate;
    insert into powerapp_nds_toptalker_services (tx_date, phone, service, transmit, received, tx_usage)
    select tx_date, phone, service, sum(transmit), sum(received), sum(transmit+received) 
    from   powerapp_nds_log a
@@ -23,6 +25,7 @@ begin
    group by tx_date, phone, service
    having sum(transmit+received) > 0;
 
+   delete from powerapp_nds_toptalker_buys where tx_date=  p_trandate;
    insert into powerapp_nds_toptalker_buys (tx_date, phone, plan, hits)
    select left(datein,10) tx_date, phone, plan, count(1) hits 
    from    powerapp_log a 
@@ -30,6 +33,15 @@ begin
    and    plan <> 'MYVOLUME' 
    and    exists (select 1 from powerapp_nds_toptalker b where b.tx_date = p_trandate and a.phone = b.phone)
    group by left(datein,10), phone, plan;
+
+   delete from powerapp_nds_brand_usage where tx_date=  p_trandate;
+   insert ignore into powerapp_nds_brand_usage (tx_date, brand, transmit, received, tx_usage, num_subs)
+   select b.tx_date, a.brand, sum(b.transmit), sum(b.received), sum(b.transmit+b.received), count(distinct phone) 
+   from   powerapp_users_apn a, powerapp_nds_log b 
+   where  a.phone = b.phone
+   and    b.tx_date = p_trandate
+   group by  b.tx_date, a.brand;
+   
 
 end;
 //
