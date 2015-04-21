@@ -84,7 +84,7 @@ begin
                             'select service, phone, sum(b_usage) ',
                             'from   test.udr_', @nCtr, ' a ',
                             'where  tx_date = ''', p_trandate, ''' ',
-                            'and    exists (select 1 from powerapp_udr_toptalker b where b.tx_date=''', p_trandate, ''' and a.phone=b.phone) ',
+         --                   'and    exists (select 1 from powerapp_udr_toptalker b where b.tx_date=''', p_trandate, ''' and a.phone=b.phone) ',
                             'group by service, phone ',
                             'having sum(b_usage) > 0');
          PREPARE stmt FROM @vSql;
@@ -96,34 +96,34 @@ begin
                             'select source, phone, sum(b_usage) ',
                             'from   test.udr_', @nCtr, ' a ',
                             'where  tx_date = ''', p_trandate, ''' ',
-                            'and    exists (select 1 from powerapp_udr_toptalker b where b.tx_date=''', p_trandate, ''' and a.phone=b.phone) ',
+         --                   'and    exists (select 1 from powerapp_udr_toptalker b where b.tx_date=''', p_trandate, ''' and a.phone=b.phone) ',
                             'group by source, phone ',
                             'having sum(b_usage) > 0');
          PREPARE stmt FROM @vSql;
          EXECUTE stmt;
          DEALLOCATE PREPARE stmt;
 
-         SET @vSql = '';
-         SET @vSql = concat('insert into tmp_services_summary (tx_date, service, tx_usage) ',
-                            'select tx_date, service, sum(b_usage) ',
-                            'from   test.udr_', @nCtr, ' a ',
-                            'where  tx_date = ''', p_trandate, ''' ',
-                            'group by tx_date, service ',
-                            'having sum(b_usage) > 0');
-         PREPARE stmt FROM @vSql;
-         EXECUTE stmt;
-         DEALLOCATE PREPARE stmt;
+         -- SET @vSql = '';
+         -- SET @vSql = concat('insert into tmp_services_summary (tx_date, service, tx_usage) ',
+         --                    'select tx_date, service, sum(b_usage) ',
+         --                    'from   test.udr_', @nCtr, ' a ',
+         --                    'where  tx_date = ''', p_trandate, ''' ',
+         --                    'group by tx_date, service ',
+         --                    'having sum(b_usage) > 0');
+         -- PREPARE stmt FROM @vSql;
+         -- EXECUTE stmt;
+         -- DEALLOCATE PREPARE stmt;
 
-         SET @vSql = '';
-         SET @vSql = concat('insert into tmp_sources_summary (tx_date, source, tx_usage) ',
-                            'select tx_date, source, sum(b_usage) ',
-                            'from   test.udr_', @nCtr, ' a ',
-                            'where  tx_date = ''', p_trandate, ''' ',
-                            'group by tx_date, source ',
-                            'having sum(b_usage) > 0');
-         PREPARE stmt FROM @vSql;
-         EXECUTE stmt;
-         DEALLOCATE PREPARE stmt;
+         -- SET @vSql = '';
+         -- SET @vSql = concat('insert into tmp_sources_summary (tx_date, source, phone, tx_usage) ',
+         --                    'select tx_date, source, sum(b_usage) ',
+         --                    'from   test.udr_', @nCtr, ' a ',
+         --                    'where  tx_date = ''', p_trandate, ''' ',
+         --                    'group by tx_date, source ',
+         --                    'having sum(b_usage) > 0');
+         -- PREPARE stmt FROM @vSql;
+         -- EXECUTE stmt;
+         -- DEALLOCATE PREPARE stmt;
 
          SET @vSql = '';
          SET @vSql = concat('insert into powerapp_udr_toptalker_log (tx_date, phone, source, service, rx, tx, b_usage, tx_time, filename) ',
@@ -152,8 +152,10 @@ begin
    update powerapp_udr_toptalker a set tx_usage=(select sum(b_usage) from powerapp_udr_toptalker_log b where a.phone=.b.phone and a.tx_date=b.tx_date) where tx_date = p_trandate;   
    insert ignore into powerapp_udr_toptalker_services (tx_date, phone, service, tx_usage) select p_trandate, phone, service, sum(tx_usage) from tmp_top_services group by 1,2,3;
    insert ignore into powerapp_udr_toptalker_sources(tx_date, phone, source, tx_usage) select p_trandate, phone, source, sum(tx_usage) from tmp_top_sources group by 1,2,3;
-   insert ignore into powerapp_udr_services_summary (tx_date, service, tx_usage) select tx_date, service, sum(tx_usage) from tmp_services_summary group by 1,2;
-   insert ignore into powerapp_udr_sources_summary (tx_date,source, tx_usage) select tx_date, source, sum(tx_usage) from tmp_sources_summary group by 1,2;
+   -- insert ignore into powerapp_udr_services_summary (tx_date, service, tx_usage) select tx_date, service, sum(tx_usage) from tmp_services_summary group by 1,2;
+   -- insert ignore into powerapp_udr_sources_summary (tx_date,source, tx_usage) select tx_date, source, sum(tx_usage) from tmp_sources_summary group by 1,2;
+   insert ignore into powerapp_udr_services_summary (tx_date, service, brand, tx_usage, tx_uniq) select p_trandate, b.service, IFNULL(a.brand,'OTHERS'), sum(b.tx_usage), count(distinct b.phone) from tmp_top_services b left outer join powerapp_users_apn a on a.phone = b.phone group by 1,2,3;
+   insert ignore into powerapp_udr_sources_summary (tx_date, source, brand, tx_usage, tx_uniq) select p_trandate, b.source, IFNULL(a.brand,'OTHERS'), sum(b.tx_usage), count(distinct b.phone) from tmp_top_sources b left outer join powerapp_users_apn a on a.phone = b.phone group by 1,2,3;
 
    select 'Fifth Pass....' Process;
    insert ignore into powerapp_udr_toptalker_buys (tx_date, phone, plan, hits)
@@ -312,3 +314,47 @@ order by a.tx_usage desc;
 20 rows in set (0.01 sec)
 
 Tel No. 282-8812
+
+
+
+
+select tx_date,brand,tx_usage,tx_uniq from powerapp_udr_services_summary where tx_date>='2015-04-15' and service='FreeIpPool';
+select * from powerapp_flu.buys_per_plan where datein >= '2015-04-15' and service='MyvolumeService';
+
++------------+---------+---------+---------+---------+---------+
+| Date       |   BUDDY |  OTHERS |  POSTPD |     TNT |   TOTAL |
++------------+---------+---------+---------+---------+---------+
+| 2015-04-15 |   51161 |    5505 |     368 |   54581 |  111615 | 
+| 2015-04-16 |   35295 |    4249 |     277 |   37357 |   77178 |
+| 2015-04-17 |  188354 |   14638 |    1352 |  166016 |  370360 |
++------------+---------+---------+---------+---------+---------+
+12 rows in set (0.01 sec)
+
+
++------------+--------+--------------+---------+
+| tx_date    | brand  | tx_usage     | tx_uniq |
++------------+--------+--------------+---------+
+| 2015-04-15 | BUDDY  | 111092424642 |   51161 |
+| 2015-04-15 | OTHERS |  16486115746 |    5505 |
+| 2015-04-15 | POSTPD |    798578504 |     368 |
+| 2015-04-15 | TNT    | 125740109489 |   54581 |
+| 2015-04-16 | BUDDY  | 183180181449 |   35295 |
+| 2015-04-16 | OTHERS |  28628752694 |    4249 |
+| 2015-04-16 | POSTPD |   1358650905 |     277 |
+| 2015-04-16 | TNT    | 192648369275 |   37357 |
+| 2015-04-17 | BUDDY  | 283030334748 |  188354 |
+| 2015-04-17 | OTHERS |  34919950440 |   14638 |
+| 2015-04-17 | POSTPD |   1796201404 |    1352 |
+| 2015-04-17 | TNT    | 244526438608 |  166016 |
++------------+--------+--------------+---------+
+
++------------+-----------------+---------+
+| datein     | service         | no_buys |
++------------+-----------------+---------+
+| 2015-04-15 | MyvolumeService | 6399987 |
+| 2015-04-16 | MyvolumeService |   49499 |
+| 2015-04-17 | MyvolumeService |   78657 |
+| 2015-04-18 | MyvolumeService |   85293 |
+| 2015-04-19 | MyvolumeService |   72213 |
+| 2015-04-20 | MyvolumeService |    7872 |
++------------+-----------------+---------+
