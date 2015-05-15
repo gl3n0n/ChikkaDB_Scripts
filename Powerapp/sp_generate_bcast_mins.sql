@@ -16,14 +16,26 @@ BEGIN
       while (@nCtr < @nDays)
       do 
          set @dPrevBcast = date_add(p_startdt, interval @nCtr day);
+         set @nChkTab = 0;
+         set @nChkTabS = 0;
+         select count(1) into @nChkTab from information_schema.tables where table_name = concat('tmp_plan_users_', date_format(@dPrevBcast, '%m%d')) and table_schema='archive_powerapp_flu';
+         select count(1) into @nChkTabS from information_schema.tables where table_name = concat('tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), '_sun') and table_schema='archive_powerapp_flu';
          if (@vWhere = '') then
-            SET @vWhere = concat(' and not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), ' b where b.phone = a.phone)');
-            SET @vWherePwr = concat(' and not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), ' c where c.phone = a.phone and c.source=''powerapp'')');
-            SET @vWhereSun = concat(' where not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), '_sun b where b.phone = a.phone)');
+            if @nChkTab >= 1 then 
+               SET @vWhere = concat(' and not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), ' b where b.phone = a.phone)');
+               SET @vWherePwr = concat(' and not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), ' c where c.phone = a.phone and c.source=''powerapp'')');
+            end if;
+            if @nChkTabS >= 1 then 
+               SET @vWhereSun = concat(' where not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), '_sun b where b.phone = a.phone)');
+            end if;
          else
-            SET @vWhere = concat(@vWhere, ' and not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), ' b where b.phone = a.phone)');
-            SET @vWherePwr = concat(@vWherePwr, ' and not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), ' c where c.phone = a.phone and c.source=''powerapp'')');
-            SET @vWhereSun = concat(@vWhereSun, ' and not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), '_sun b where b.phone = a.phone)');
+            if @nChkTab >= 1 then 
+               SET @vWhere = concat(@vWhere, ' and not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), ' b where b.phone = a.phone)');
+               SET @vWherePwr = concat(@vWherePwr, ' and not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), ' c where c.phone = a.phone and c.source=''powerapp'')');
+            end if;
+            if @nChkTabS >= 1 then 
+               SET @vWhereSun = concat(@vWhereSun, ' and not exists (select 1 from tmp_plan_users_', date_format(@dPrevBcast, '%m%d'), '_sun b where b.phone = a.phone)');
+            end if;
          end if;
          set @nCtr = @nCtr + 1;
       end while;
@@ -34,6 +46,7 @@ BEGIN
    set session read_buffer_size = 8388608;
 
    create temporary table if not exists tmp_admins (phone varchar(12) not null, primary key (phone));
+   insert ignore into tmp_admins (phone) values ('639474296639');
    insert ignore into tmp_admins (phone) values ('639474296630');
    insert ignore into tmp_admins (phone) values ('639399369648');
    insert ignore into tmp_admins (phone) values ('639188039134');
@@ -110,38 +123,45 @@ BEGIN
       EXECUTE stmt;
       DEALLOCATE PREPARE stmt;
    end if;
-   SET @vSql = concat('select phone into outfile ''/tmp/TNT_', date_format(p_bcastdt, '%Y%m%d'), '.csv'' fields terminated by '','' lines terminated by ''\n'' 
-                       from ( select phone from tmp_admins union
-                              select phone from tmp_plan_users where brand = ''TNT'' and plan = ''', p_plan_tnt, ''') t
-                      ');
-   select @vSql;
-   PREPARE stmt FROM @vSql;
-   EXECUTE stmt;
-   DEALLOCATE PREPARE stmt;
-   SET @vSql = concat('select phone into outfile ''/tmp/BUDDY_', date_format(p_bcastdt, '%Y%m%d'), '.csv'' fields terminated by '','' lines terminated by ''\n'' 
-                       from ( select phone from tmp_admins union
-                              select phone from tmp_plan_users where brand = ''BUDDY'' and plan = ''', p_plan_bud, ''') t
-                      ');
-   select @vSql;
-   PREPARE stmt FROM @vSql;
-   EXECUTE stmt;
-   DEALLOCATE PREPARE stmt;
+
+   if p_tnt_limit > 0 then
+      SET @vSql = concat('select phone into outfile ''/tmp/TNT_', date_format(p_bcastdt, '%Y%m%d'), '.csv'' fields terminated by '','' lines terminated by ''\n'' 
+                          from ( select phone from tmp_admins union
+                                 select phone from tmp_plan_users where brand = ''TNT'' and plan = ''', p_plan_tnt, ''') t
+                         ');
+      select @vSql;
+      PREPARE stmt FROM @vSql;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+   end if;
+
+   if p_bud_limit > 0 then
+      SET @vSql = concat('select phone into outfile ''/tmp/BUDDY_', date_format(p_bcastdt, '%Y%m%d'), '.csv'' fields terminated by '','' lines terminated by ''\n'' 
+                          from ( select phone from tmp_admins union
+                                 select phone from tmp_plan_users where brand = ''BUDDY'' and plan = ''', p_plan_bud, ''') t
+                         ');
+      select @vSql;
+      PREPARE stmt FROM @vSql;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+   end if;
 
    SET @vSunTableNm = concat('tmp_plan_users_', date_format(p_bcastdt, '%m%d'), '_sun');
    SET @vSql = '';
    SET @vSql = concat('create table if not exists ', @vSunTableNm, ' like tmp_plan_users_sun');
    select @vSql;
-   PREPARE stmt FROM @vSql;
-   EXECUTE stmt;
-   DEALLOCATE PREPARE stmt;
-
-   SET @vSql = concat('truncate table ', @vSunTableNm);
-   select @vSql;
-   PREPARE stmt FROM @vSql;
-   EXECUTE stmt;
-   DEALLOCATE PREPARE stmt;
-      
    if p_sun_limit > 0 then
+
+      PREPARE stmt FROM @vSql;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+      
+      SET @vSql = concat('truncate table ', @vSunTableNm);
+      select @vSql;
+      PREPARE stmt FROM @vSql;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+      
       SET @vSql = '';
       SET @vSql = concat('insert ignore into ', @vSunTableNm, ' select phone, '''', ''POWERAPP'', ''', p_bcastdt, ''', ''SUN'' from tmp_bcast_sun_mins a ',
                          @vWhereSun, ' order by datein desc limit 500000');
@@ -166,7 +186,8 @@ GRANT EXECUTE ON PROCEDURE `archive_powerapp_flu`.`sp_generate_bcast_mins` TO 's
 flush privileges;
 
 
-call sp_generate_bcast_mins('2015-01-07', '2015-01-22', 'ALLDAY', 'SPEEDBOOST', 1250000);
+
+call sp_generate_bcast_mins('2015-05-13', '2015-05-23', 'Y', 0, 0, 'FACEBOOK', 2000000, '', 0);
 
 
 #!/bin/bash

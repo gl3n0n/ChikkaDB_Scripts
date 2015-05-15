@@ -185,6 +185,12 @@ wc -l /tmp/PISO*20140905.csv
 sort /tmp/PISO*20140905.csv | uniq | wc -l
 mv /tmp/PISO*20140905.csv .
 
+split -l 735000 BUDDY_20150505.csv BUDDY
+mv BUDDYaa BUDDY_20150505.csv
+mv BUDDYab BUDDY2_20150505.csv
+mv BUDDYac BUDDY3_20150505.csv
+
+
 
 select  phone into outfile '/tmp/POWERAP_MINs_2014_August.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2014-08-01' and datein < '2014-09-01' group by phone;
 

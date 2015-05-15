@@ -115,6 +115,25 @@ begin
        from powerapp_log
        where left(datein,7) = left(@tran_dt, 7)
        and   brand = 'POSTPD';
+
+       select count(distinct phone)
+       into  @NumActive30d_tnt
+       from powerapp_log
+       where left(datein,7) = left(@tran_dt, 7)
+       and   brand = 'TNT'
+       and   free='false';
+       select count(distinct phone)
+       into  @NumActive30d_buddy
+       from powerapp_log
+       where left(datein,7) = left(@tran_dt, 7)
+       and   brand = 'BUDDY'
+       and   free='false';
+       select count(distinct phone)
+       into  @NumActive30d_postpd
+       from powerapp_log
+       where left(datein,7) = left(@tran_dt, 7)
+       and   brand = 'POSTPD'
+       and   free='false';
     else
        select count(distinct phone)
        into  @NumUniq30d_tnt
@@ -134,8 +153,31 @@ begin
        where datein >= date_sub(@tran_dt, interval 30 day)
        and datein < @tran_nw
        and   brand = 'POSTPD';
+
+       select count(distinct phone)
+       into  @NumActive30d_tnt
+       from powerapp_log
+       where datein >= date_sub(@tran_dt, interval 30 day)
+       and datein < @tran_nw
+       and   brand = 'TNT'
+       and   free='false';
+       select count(distinct phone)
+       into  @NumActive30d_buddy
+       from powerapp_log
+       where datein >= date_sub(@tran_dt, interval 30 day)
+       and datein < @tran_nw
+       and   brand = 'BUDDY'
+       and   free='false';
+       select count(distinct phone)
+       into  @NumActive30d_postpd
+       from powerapp_log
+       where datein >= date_sub(@tran_dt, interval 30 day)
+       and datein < @tran_nw
+       and   brand = 'POSTPD'
+       and   free='false';
     end if;
     SET @NumUniq30d = IFNULL(@NumUniq30d_tnt,0) + IFNULL(@NumUniq30d_buddy,0) + IFNULL(@NumUniq30d_postpd,0) ;
+    SET @NumActive30d = IFNULL(@NumActive30d_tnt,0) + IFNULL(@NumActive30d_buddy,0) + IFNULL(@NumActive30d_postpd,0) ;
 
     update powerapp_dailyrep
     set    num_optout= IFNULL(@vNumOptout,0),
@@ -145,7 +187,11 @@ begin
            num_uniq_30d=IFNULL(@NumUniq30d,0),
            num_uniq_30d_tnt=IFNULL(@NumUniq30d_tnt,0),
            num_uniq_30d_buddy=IFNULL(@NumUniq30d_buddy,0),
-           num_uniq_30d_postpd=IFNULL(@NumUniq30d_postpd,0)
+           num_uniq_30d_postpd=IFNULL(@NumUniq30d_postpd,0),
+           num_actv_30d=IFNULL(@NumActive30d,0),
+           num_actv_30d_tnt=IFNULL(@NumActive30d_tnt,0),
+           num_actv_30d_buddy=IFNULL(@NumActive30d_buddy,0),
+           num_actv_30d_postpd=IFNULL(@NumActive30d_postpd,0)
     where  tran_dt = @tran_dt;
 
     -- PREPAID, TNT, SUN      App Deals - 24hrs

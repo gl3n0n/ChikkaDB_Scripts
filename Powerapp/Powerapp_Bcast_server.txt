@@ -1,0 +1,169 @@
+gmlenon@jumpserv-hi10:~$ ssh gmlenon@172.17.250.158
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ W A R N I N G @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+THIS SYSTEM IS RESTRICTED TO AUTHORIZED USERS FOR AUTHORIZED USE
+ONLY. UNAUTHORIZED ACCESS IS STRICTLY PROHIBITED AND MAY BE
+PUNISHABLE UNDER THE "PHILIPPINE E-COMMERCE LAW" (Republic Act No. 8792)
+OR OTHER APPLICABLE LAWS. IF NOT AUTHORIZED TO ACCESS THIS SYSTEM,
+DISCONNECT NOW. BY CONTINUING, YOU CONSENT TO YOUR KEYSTROKES
+AND DATA CONTENT BEING MONITORED. ALL PERSONS ARE HEREBY
+NOTIFIED THAT THE USE OF THIS SYSTEM CONSTITUTES CONSENT TO
+MONITORING AND AUDITING.
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ W A R N I N G @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+gmlenon@172.17.250.158's password:
+Last login: Mon May  4 14:25:03 2015 from 172.17.250.39
+-----------------------------
+gmlenon@api2-rx:~$ su -
+Password:
+-----------------------------
+root@api2-rx:~# su - noc
+-----------------------------
+noc@api2-rx:~$ cd /var/www/html/scripts/5555-powerapp
+-----------------------------
+noc@api2-rx:/var/www/html/scripts/5555-powerapp$ ls -lhtr
+total 380K
+-rw-r--r--. 1 noc root    782 Jan  4  2014 callback_url-push.php
+-rw-r--r--. 1 noc root    782 Jan  4  2014 callback_url.php
+-rw-r--r--. 1 noc root   4.1K Jan  4  2014 api_test_form.php
+-rw-r--r--. 1 noc root   1.5K Jan  4  2014 test_form.php
+-rw-rw-r--. 1 noc apache  286 Jan 23  2014 test_mysql.php
+-rw-rw-r--. 1 noc noc     222 Jan 23  2014 test_redis.php
+-rw-rw-r--. 1 noc noc     786 Jan 24  2014 test_curl.php
+-rw-rw-r--. 1 noc noc      43 Jan 24  2014 test_info.php
+-rw-r--r--. 1 noc root   1.9K Jun 10  2014 handler.php
+-rw-rw-r--. 1 noc noc    2.4K Jun 11  2014 spam_bcast_father.php
+-rw-rw-r--. 1 noc noc    2.5K Jun 27  2014 spam_piso.php
+-rw-rw-r--. 1 noc noc    2.5K Jun 27  2014 spam_tnt.php
+-rw-rw-r--. 1 noc noc    2.5K Jun 27  2014 spam_smart.php
+-rw-rw-r--. 1 noc noc    2.6K Jul  4  2014 spam_bcast_postpaid.php
+-rw-rw-r--. 1 noc noc    2.6K Jul 18  2014 \
+-rw-rw-r--. 1 noc noc    2.6K Aug  4  2014 spam_bcast_tester.php
+-rw-rw-r--. 1 noc noc    1.5K Aug 12  2014 reprocess.php
+drwxrwxr-x. 2 noc noc    4.0K Aug 12  2014 reprocess
+-rw-rw-r--. 1 noc noc    2.6K Sep  5  2014 spam_bcast_buddy_piso.php
+-rw-rw-r--. 1 noc noc    2.6K Sep  5  2014 spam_bcast_tnt_piso.php
+-rw-rw-r--. 1 noc noc    2.6K Sep 13  2014 spam_bcast_tnt_inactive.php
+-rw-rw-r--. 1 noc noc    2.6K Sep 25  2014 spam_bcast_samsung.php
+-rw-r--r--. 1 noc noc     11K Oct 15  2014 api_callback.php.20141023-2355
+-rw-rw-r--. 1 noc noc     114 Oct 15  2014 carrier_test.php
+drwxrwxr-x. 2 noc noc    4.0K Oct 17  2014 archive_spam
+drwxrwxr-x. 2 noc noc    4.0K Oct 17  2014 archive
+-rw-rw-r--. 1 noc noc    3.8K Oct 17  2014 spam_bcast.php
+-rw-rw-r--. 1 noc noc    2.6K Oct 18  2014 spam_bcast_android.php.10182014
+-rw-r--r--. 1 noc noc     11K Oct 24  2014 api_callback.php.10242014
+-rw-rw-r--. 1 noc noc    4.5K Oct 31  2014 spam_bcast_lib.php
+drwxr-xr-x. 2 noc root   4.0K Nov  7 14:07 chikka-php-lib
+-rw-rw-r--. 1 noc noc    1.2K Nov 11 13:55 carry_over.php
+-rw-r--r--. 1 noc noc     12K Nov 12 13:44 api_callback.php.promo.11122014
+-rw-r--r--. 1 noc root    12K Nov 12 13:52 api_callback.php
+-rw-rw-r--. 1 noc noc    1.7K Nov 17 16:11 prize_populator.php
+-rw-rw-r--. 1 noc noc    2.6K Nov 21 08:30 spam_bcast_android.php.11212014
+-rw-rw-r--. 1 noc noc    2.6K Nov 21 08:31 spam_bcast_buddy.php.11212104
+-rw-rw-r--. 1 noc noc    2.6K Nov 21 08:31 spam_bcast_tnt.php.11212014
+-rw-rw-r--. 1 noc noc    2.6K Nov 21 18:31 spam_bcast_tnt.php.11212014a
+-rw-rw-r--. 1 noc noc    2.6K Nov 23 18:49 spam_bcast_shoutout.php
+-rw-rw-r--. 1 noc noc    2.6K Dec  6 00:45 spam_bcast_buddy.php.12062014
+-rw-rw-r--. 1 noc noc    2.6K Dec  6 00:46 spam_bcast_tnt.php.12062014
+-rw-rw-r--. 1 noc noc    2.6K Dec  9 23:42 spam_bcast_buddy.php.12092014
+-rw-rw-r--. 1 noc noc    2.6K Dec  9 23:42 spam_bcast_tnt.php.12092014
+-rw-rw-r--. 1 noc noc    2.6K Dec  9 23:47 spam_bcast_unli.php
+-rw-rw-r--. 1 noc noc    2.6K Dec 29 05:05 spam_bcast_buddy.php.12292014
+-rw-rw-r--. 1 noc noc    2.6K Dec 29 05:06 spam_bcast_tnt.php.12292014
+-rw-rw-r--. 1 noc noc    2.6K Dec 29 05:08 spam_bcast_android.php.12292014
+-rw-rw-r--. 1 noc noc    2.6K Dec 29 05:09 spam_bcast_android.php
+-rw-rw-r--. 1 noc noc    2.6K Jan  7 22:04 spam_bcast_tnt.php.01072015
+-rw-rw-r--. 1 noc noc    2.6K Jan  7 22:07 spam_bcast_buddy.php.01072015
+-rw-rw-r--. 1 noc noc      13 Jan 14 10:21 test.txt
+-rw-rw-r--. 1 noc noc    2.9K Jan 14 10:37 spam_bcast_buddy_papa.php
+-rw-rw-r--. 1 noc noc    3.0K Jan 14 10:37 spam_bcast_tnt_papa.php
+-rw-rw-r--. 1 noc noc    2.7K Jan 14 17:46 dear_pope_expire.php
+-rw-rw-r--. 1 noc noc    2.6K Jan 21 23:15 spam_bcast_android.php.01212015
+-rw-rw-r--. 1 noc noc    2.6K Jan 22 06:57 spam_bcast_free.php
+-rw-r--r--. 1 noc noc    1.9K Jan 29 17:53 handler.php.20150129
+-rw-rw-r--. 1 noc noc    2.6K Feb 27 13:47 spam_bcast_tnt.php.02272015
+-rw-rw-r--. 1 noc noc    2.6K Feb 27 13:48 spam_bcast_buddy.php.02272015
+-rw-rw-r--. 1 noc noc    2.6K Mar  5 08:48 spam_bcast_tnt.php.03052015
+-rw-rw-r--. 1 noc noc    2.6K Mar  5 09:04 spam_bcast_tnt.php.03052015a
+-rw-rw-r--. 1 noc noc    2.6K Mar  5 09:04 spam_bcast_buddy.php.03052015
+-rw-rw-r--. 1 noc noc    3.1K Mar  5 09:34 stats.php
+-rw-rw-r--. 1 noc noc    2.6K Apr  1 19:05 spam_bcast_buddy.php.04012015
+-rw-rw-r--. 1 noc noc    2.6K Apr  1 19:06 spam_bcast_tnt.php.04012015
+-rw-rw-r--. 1 noc noc    2.6K Apr  9 09:45 spam_bcast_buddy.php.04092015
+-rw-rw-r--. 1 noc noc    2.6K Apr  9 10:02 spam_bcast_tnt.php.04092015
+-rw-rw-r--. 1 noc noc    2.6K Apr  9 10:04 spam_bcast_tnt.php
+-rw-rw-r--. 1 noc noc    2.6K Apr 27 18:49 spam_bcast_buddy.php.04272015
+-rw-rw-r--. 1 noc noc    2.6K Apr 27 18:52 spam_bcast_buddy2.php
+-rw-rw-r--. 1 noc noc    2.6K Apr 27 18:54 spam_bcast_buddy3.php
+drwxr-xr-x. 3 noc root   4.0K May  3 09:17 includes
+-rw-rw-r--. 1 noc noc    2.6K May  3 09:18 spam_bcast_buddy.php.05031983
+-rw-rw-r--. 1 noc noc    2.8K May  3 10:14 spam_bcast_buddy_special.php
+-rw-rw-r--. 1 noc noc    2.6K May  4 07:51 spam_bcast_buddy.php
+drwxrwxr-x+ 9 noc noc     28K May  7 10:28 bcast
+-----------------------------
+noc@api2-rx:/var/www/html/scripts/5555-powerapp$ crontab -l
+@reboot nohup ./vmstat_with_time.sh &
+
+ * * * * * /opt/projects/powerapp_wap/powerapp/wap_always_up.sh
+#0 0 * * * /opt/projects/frontend_startup.sh > /dev/null 2<&1&
+0 0 * * * sh /opt/projects/scripts/backup-scripts/outrotate.sh > /dev/null 2>&1
+#logzipjem
+0 5 * * * sh /opt/projects/scripts/backup-scripts/logzip.sh > /dev/null 2>&1
+
+#spam bcast
+#43 8 21 11 * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_buddy.php;
+
+0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_buddy.php;
+0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_buddy2.php;
+#0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_buddy3.php;
+
+#0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_tnt.php;
+#0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_unli.php;
+
+#PAPA
+#0 8 15 1 * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_buddy_papa.php START;
+#0 8 16,17,18 1 * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_buddy_papa.php DURING;
+#0 8 15 1 * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_tnt_papa.php START;
+#0 8 16,17,18 1 * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_tnt_papa.php DURING;
+
+21 11 20 1 * cd /var/www/html/scripts/5555-powerapp/; php dear_pope_expire.php;
+
+0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_free.php;
+
+#0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_android.php;
+#0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_shoutout.php;
+0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast.php BUDDY_ACTIVE_1;
+0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast.php BUDDY_ACTIVE_2;
+0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast.php BUDDY_INACTIVE;
+0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast.php TNT_ACTIVE_1;
+0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast.php TNT_ACTIVE_2;
+0 8 * * * cd /var/www/html/scripts/5555-powerapp/; php spam_bcast.php TNT_INACTIVE;
+30 8 * * 1,3,6 cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_lib.php BUDDY_CUR;
+30 8 * * 1,3,6 cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_lib.php BUDDY_LAP;
+30 8 * * 1,3,6 cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_lib.php TNT_CUR;
+30 8 * * 1,3,6 cd /var/www/html/scripts/5555-powerapp/; php spam_bcast_lib.php TNT_LAP;
+
+#prize populator
+#0 12 * * * cd /var/www/html/scripts/5555-powerapp/; php prize_populator.php;
+
+0 1 * * * cd /var/www/html/scripts/5555-powerapp/; php stats.php 1;
+
+0 8 * * * cd /home/noc/ps_java; /opt/bin/python cal_stats.py;
+
+# smart stats
+15 2 * * * cd /opt/scripts/devo; /opt/bin/python daily_stats.py;
+15 1 * * * cd /opt/scripts/devo; /opt/bin/python daily_stats_for_smart.py;
+# 0 2 * * * cd /opt/scripts/devo; /opt/bin/python hourly_stats_per_day.py; # Disabled by onin because the dataset is too large already and  processing takes forever to finish
+15 8 * * * cd /opt/scripts/devo; sh email_stat.sh;
+
+# sun stats
+15 2 * * * cd /opt/scripts/devo/sun; /opt/bin/python daily_stats.py;
+15 1 * * * cd /opt/scripts/devo/sun; /opt/bin/python daily_stats_for_sun.py;
+0 8 * * * cd /opt/scripts/devo/sun; /opt/bin/python cal_stats.py;
+
+-----------------------------
+noc@api2-rx:/var/www/html/scripts/5555-powerapp$ date
+noc@api2-rx:/var/www/html/scripts/5555-powerapp$ ls -lhtr
+noc@api2-rx:/var/www/html/scripts/5555-powerapp$ cd bcast/
+noc@api2-rx:/var/www/html/scripts/5555-powerapp/bcast$ ls -lhtr
+
