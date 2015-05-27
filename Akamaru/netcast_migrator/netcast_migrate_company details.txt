@@ -1,0 +1,45 @@
+Dump the following tables from saluki to pythagoras.
+
+netcast3_db.contacts_tb
+netcast3_db.users_tb
+netcast3_db.msisdn_tb
+netcast3_db.company_tb
+netcast3_db.group_tb
+netcast3_db.contacts_group_tb
+
+
+@pythagoras 
+GRANT ALL PRIVILEGES ON netcast_migrate.* TO  netcast_migrate@localhost IDENTIFIED BY 'netcast_migrate';
+
+# connection details for REGULAR DB
+my $host_reg = "localhost";
+my $dbase_reg = "netcast_db_templates";
+my $port_reg = "3306";
+my $user_reg = "netcast_migrate";
+my $password_reg = "netcast_migrate";
+my $cstring_reg = "${dbtype}:${dbase_reg}:${host_reg}";
+ 
+From gaara copy /home/dba_scripts/netcast_db_migrator.pl to pythagoras /home/dba_scripts/netcast_migrator
+
+
+
+Usage 
+
+/home/dba_scripts/netcast_db_migrator.pl [DB_TYPE] [OLD_ID] [NEW_ID]
+
+/home/dba_scripts/netcast_db_migrator.pl REG 34 8
+
+Stored Procedure:
+
+prc_netcast_migrate_company_details
+netcast_db_templates.prc_netcast_db_creator
+
+
+
+
+
+
+
+
+
+

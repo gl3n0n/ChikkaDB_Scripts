@@ -95,7 +95,6 @@ $worksheet[0]->merge_range('BP2:BW2', 'REGISTRATION', $format2);
 $worksheet[0]->merge_range('BY2:CC2', 'MIGRATION',    $format2);
 $worksheet[0]->merge_range('CE2:CH2', 'LOGIN',        $format2);
 $worksheet[0]->merge_range('CJ2:CM2', 'USSD',         $format2);
-$worksheet[0]->merge_range('CO2:CT2', 'ACTIVE MINS',         $format2);
 
 $worksheet[0]->merge_range('B3:E3',    'HITS',                               $format3);
 $worksheet[0]->merge_range('F3:I3',    'Unique Charged',                     $format3);
@@ -123,7 +122,6 @@ $worksheet[0]->merge_range('BY3:CC3', ' ',                 $format3);
 $worksheet[0]->merge_range('CE3:CH3', 'Sign-in via',       $format3);
 $worksheet[0]->merge_range('CJ3:CK3', '*555',              $format3);
 $worksheet[0]->merge_range('CL3:CM3', '*118',              $format3);
-$worksheet[0]->merge_range('CO3:CT3', ' ',                 $format3);
 
 $worksheet[0]->set_column(0,0,10);
 $worksheet[0]->set_column(1,12,8);
@@ -146,7 +144,7 @@ $worksheet[0]->set_column(82,85,8);
 $worksheet[0]->set_column(86,86,1);
 $worksheet[0]->set_column(87,87,12);
 $worksheet[0]->set_column(88,88,8);
-$worksheet[0]->set_column(91,91,1);
+
 $row = 2;
 $col = 0;
 $i=1;
@@ -245,14 +243,6 @@ $worksheet[0]->write($row+$i, $col+88, 'USSD',       $format);
 $worksheet[0]->write($row+$i, $col+89, 'Trans (MT)', $format);
 $worksheet[0]->write($row+$i, $col+90, 'USSD',       $format);
 
-$worksheet[0]->write($row+$i, $col+92, 'Smart',       $format);
-$worksheet[0]->write($row+$i, $col+93, 'Globe',       $format);
-$worksheet[0]->write($row+$i, $col+94, 'Sun',       $format);
-$worksheet[0]->write($row+$i, $col+95, 'SOCNET',       $format);
-$worksheet[0]->write($row+$i, $col+96, 'PC',       $format);
-$worksheet[0]->write($row+$i, $col+97, 'TOTAL',       $format);
-
-
 #$row = 2;
 #$col = 0;
 #$i=1;
@@ -263,7 +253,7 @@ $strSQLCTMv6 = "select DATE_FORMAT(tran_dt,'%m/%d/%Y'),
                        uniq_nonreg, 
                        reg_total, reg_post, reg_pre, reg_tm_tnt, 
                        regm_total, regm_post, regm_pre, regm_tm_tnt
-                 from ctmv6_carrier_stats where carrier='globe' and left(tran_dt,7) >= '".$current_date."' order by tran_dt";
+                 from ctmv6_carrier_stats where carrier='globe' and left(tran_dt,7) = '".$current_date."' order by tran_dt";
 $sth_ctm_v6 = $dbh_ctmv6->prepare($strSQLCTMv6);
 $sth_ctm_v6->execute();
 
@@ -302,7 +292,7 @@ $strSQLCTMv6 = "select hits_total, hits_post, hits_pre, hits_tm_tnt, hits_tat_br
                        uniq_nonreg, 
                        reg_total, reg_post, reg_pre, reg_tm_tnt, reg_tat_bro,
                        regm_total, regm_post, regm_pre, regm_tm_tnt, regm_tat_bro
-                 from ctmv6_carrier_stats where carrier='smart' and left(tran_dt,7) >= '".$current_date."' order by tran_dt";
+                 from ctmv6_carrier_stats where carrier='smart' and left(tran_dt,7) = '".$current_date."' order by tran_dt";
 $sth_ctm_v6 = $dbh_ctmv6->prepare($strSQLCTMv6);
 $sth_ctm_v6->execute();
 
@@ -345,7 +335,7 @@ $strSQLCTMv6 = "select hits_total, hits_post, hits_pre,
                        uniq_nonreg, 
                        reg_total, reg_post, reg_pre, 
                        regm_total, regm_post, regm_pre
-                 from ctmv6_carrier_stats where carrier='sun' and left(tran_dt,7) >= '".$current_date."' order by tran_dt";
+                 from ctmv6_carrier_stats where carrier='sun' and left(tran_dt,7) = '".$current_date."' order by tran_dt";
 $sth_ctm_v6 = $dbh_ctmv6->prepare($strSQLCTMv6);
 $sth_ctm_v6->execute();
 
@@ -377,7 +367,7 @@ $strSQLCTMv6 = "select reg_globe, reg_smart, reg_sun, reg_fb, reg_tw, reg_go, re
                        sign_and, sign_ios, sign_web, sign_total,
                        ussd_mt, ussd_hits, ussd_118_mt, ussd_118_hits
                 from ctmv6_registration_stats 
-                where left(tran_dt,7) >= '".$current_date."' 
+                where left(tran_dt,7) = '".$current_date."' 
                 order by tran_dt";
 $sth_ctm_v6 = $dbh_ctmv6->prepare($strSQLCTMv6);
 $sth_ctm_v6->execute();
@@ -406,36 +396,6 @@ while (@rowRst = $sth_ctm_v6->fetchrow()) {
    $worksheet[0]->write($row+$i, $col+89, $rowRst[19], $formatNumber);
    $worksheet[0]->write($row+$i, $col+90, $rowRst[20], $formatNumber);
 }
-
-$row = 2;
-$col = 0;
-$i=1;
-$strSQLCTMv6 = "
-select max(if((carrier = 'SMART'),`total`,0)) AS `smart`,
-       max(if((carrier = 'GLOBE'),`total`,0)) AS `globe`,
-       max(if((carrier = 'SUN'),`total`,0)) AS `sun`,
-       max(if((carrier = 'SOCNET'),`total`,0)) AS `socnet`,
-       max(if((carrier = 'PC'),`total`,0)) AS `pc`,
-       max(if((carrier = 'SMART'),`total`,0))+max(if((carrier = 'GLOBE'),`total`,0))+max(if((carrier = 'SUN'),`total`,0))+max(if((carrier = 'SOCNET'),`total`,0))+max(if((carrier = 'PC'),`total`,0)) as total
-from ctmv6_stats_dtl
-where left(tran_dt,7) >= '".$current_date."' and
-       type='active_carrier' group by tran_dt
-order by tran_dt";
-$sth_ctm_v6 = $dbh_ctmv6->prepare($strSQLCTMv6);
-$sth_ctm_v6->execute();
-
-while (@rowRst = $sth_ctm_v6->fetchrow()) {
-   $i++;
-   $worksheet[0]->write($row+$i, $col+92, $rowRst[0],  $formatNumber);
-   $worksheet[0]->write($row+$i, $col+93, $rowRst[1],  $formatNumber);
-   $worksheet[0]->write($row+$i, $col+94, $rowRst[2],  $formatNumber);
-   $worksheet[0]->write($row+$i, $col+95, $rowRst[3],  $formatNumber);
-   $worksheet[0]->write($row+$i, $col+96, $rowRst[4],  $formatNumber);
-   $worksheet[0]->write($row+$i, $col+97, $rowRst[5],  $formatNumber);
-   }
-
-
-
 
 # $worksheet[1] = $workbook->add_worksheet('Reg_per_Country');
 # reg_per_country
@@ -502,7 +462,7 @@ $strSQLCTMv6 = "select tran_dt,
                        PHIL, QATAR, SARABIA, SINGAPORE, SKOREA, SPAIN, SWEDEN, TAIWAN, THAILAND, 
                        UAE, UKINGDOM, USTATES, VENEZUELA, VIETNAM 
                 from   ctmv6_registration_per_country 
-                where  left(tran_dt,7) >= '".$current_date."' 
+                where  left(tran_dt,7) = '".$current_date."' 
                 order  by tran_dt";
 $sth_ctm_v6 = $dbh_ctmv6->prepare($strSQLCTMv6);
 $sth_ctm_v6->execute();
@@ -635,7 +595,7 @@ $strSQLCTMv6 = "SELECT tran_dt,
         MAX(IF(type='voice',total, 0)) as voice,
         MAX(IF(type='uniq_voice',total, 0)) as uniq_voice
         FROM  ctmv6_stats_dtl
-       where left(tran_dt,7) >= '".$current_date."%'
+       where left(tran_dt,7) like '".$current_date."%'
        GROUP BY tran_dt;";
 
 $sth_ctm_v6 = $dbh_ctmv6->prepare($strSQLCTMv6);
@@ -658,7 +618,7 @@ $workbook->close();
 $from = "ctm_stats\@chikka.com";
 $to = "jomai\@chikka.com,bresos\@chikka.com,caparolma\@chikka.com";
 $cc = "dbadmins\@chikka.com,nbrinas\@chikka.com,kpsese\@chikka.com,ra\@chikka.com,sammy.peralta\@gmail.com";
-#$to = "jojo\@chikka.com";
+#$to = "glenon\@chikka.com";
 #$cc = "glenon\@chikka.com";
 $Subject = "CTMV6 Stats, ".$current_day;
 

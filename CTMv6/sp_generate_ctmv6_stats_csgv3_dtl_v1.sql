@@ -805,8 +805,8 @@ begin
          FETCH c_pat into vA_No, vB_No;
          if not done_p then
             insert ignore into ussd_log
-            select null, id, phone a_no, right(access_code, 12) b_no, access_code, left(replace(msg, '\n', ''), 16) msg, status, datein, timein, 'smsgw_in' src, 0 from smsgw_in where datein=p_trandate and phone=vA_No and status=2 and access_code like concat('%',vB_No) union
-            select null, id, phone a_no, right(access_code, 12) b_no, access_code, left(replace(msg, '\n', ''), 16) msg, status, datein, timein, 'smsgw_in' src, 0 from smsgw_in where datein=p_trandate and phone=vB_No and status=2 and access_code like concat('%',vA_No) union
+            select null, id, right(access_code, 12) b_no, phone a_no, access_code, left(replace(msg, '\n', ''), 16) msg, status, datein, timein, 'smsgw_in' src, 0 from smsgw_in where datein=p_trandate and phone=vA_No and status=2 and access_code like concat('%',vB_No) union
+            select null, id, right(access_code, 12) b_no, phone a_no, access_code, left(replace(msg, '\n', ''), 16) msg, status, datein, timein, 'smsgw_in' src, 0 from smsgw_in where datein=p_trandate and phone=vB_No and status=2 and access_code like concat('%',vA_No) union
             select null, id, sender, recipient, origin, msg, status, datein, timein, 'mui_smart', 0 from  smart_bridge_in where datein=p_trandate and origin <> 'ussd' and sender=vA_No and status=2 and recipient=vB_No union
             select null, id, sender, recipient, origin, msg, status, datein, timein, 'mui_smart', 0 from  smart_bridge_in where datein=p_trandate and origin <> 'ussd' and sender=vB_No and status=2 and recipient=vA_No union
             select null, id, sender, recipient, origin, msg, status, datein, timein, 'mui_globe', 0 from  globe_bridge_in where datein=p_trandate and origin <> 'ussd' and sender=vA_No and status=2 and recipient=vB_No union
@@ -888,6 +888,10 @@ begin
    from ussd_log
    group by datein;
 
+   insert ignore into ussd_users_hist (a_no, b_no, datein, timein)
+   select a_no, b_no, datein, timein
+   from ussd_users;
+
    delete from ctmv6_stats_dtl where tran_dt = p_trandate and type like 'ussd%' and type not like 'ussd_118%';
    insert ignore into ctmv6_stats_dtl (tran_dt, carrier, type, total)
    select datein, 'smart', 'ussd', ussd_hits
@@ -907,7 +911,6 @@ delimiter ;
 
 
 
-delete from ussd_118_stats;
 drop procedure sp_generate_ussd_118_log;
 delimiter //
 create procedure sp_generate_ussd_118_log (p_trandate date) 
@@ -945,8 +948,8 @@ begin
          FETCH c_pat into vA_No, vB_No;
          if not done_p then
             insert ignore into ussd_118_log
-            select null, id, phone a_no, right(access_code, 12) b_no, access_code, left(replace(msg, '\n', ''), 16) msg, status, datein, timein, 'smsgw_in' src, 0 from smsgw_in where datein=p_trandate and phone=vA_No and status=2 and access_code like concat('%',vB_No) union
-            select null, id, phone a_no, right(access_code, 12) b_no, access_code, left(replace(msg, '\n', ''), 16) msg, status, datein, timein, 'smsgw_in' src, 0 from smsgw_in where datein=p_trandate and phone=vB_No and status=2 and access_code like concat('%',vA_No) union
+            select null, id, right(access_code, 12) a_no, phone b_no, access_code, left(replace(msg, '\n', ''), 16) msg, status, datein, timein, 'smsgw_in' src, 0 from smsgw_in where datein=p_trandate and phone=vA_No and status=2 and access_code like concat('%',vB_No) union
+            select null, id, right(access_code, 12) a_no, phone b_no, access_code, left(replace(msg, '\n', ''), 16) msg, status, datein, timein, 'smsgw_in' src, 0 from smsgw_in where datein=p_trandate and phone=vB_No and status=2 and access_code like concat('%',vA_No) union
             select null, id, sender, recipient, origin, msg, status, datein, timein, 'mui_smart', 0 from  smart_bridge_in where datein=p_trandate and origin <> 'ussd' and sender=vA_No and status=2 and recipient=vB_No union
             select null, id, sender, recipient, origin, msg, status, datein, timein, 'mui_smart', 0 from  smart_bridge_in where datein=p_trandate and origin <> 'ussd' and sender=vB_No and status=2 and recipient=vA_No union
             select null, id, sender, recipient, origin, msg, status, datein, timein, 'mui_globe', 0 from  globe_bridge_in where datein=p_trandate and origin <> 'ussd' and sender=vA_No and status=2 and recipient=vB_No union
@@ -1028,6 +1031,10 @@ begin
    select datein, sum(IF(charged=2, 1, 0)), sum(IF(charged=1, 1, 0))
    from ussd_118_log
    group by datein;
+
+   insert ignore into ussd_118_users_hist (a_no, b_no, datein, timein)
+   select a_no, b_no, datein, timein
+   from ussd_118_users;
 
    delete from ctmv6_stats_dtl where tran_dt = p_trandate and type like 'ussd_118%';
    insert ignore into ctmv6_stats_dtl (tran_dt, carrier, type, total)

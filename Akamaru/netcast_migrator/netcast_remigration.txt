@@ -1,0 +1,29 @@
+Re-Migration
+
+Dump the following tables from saluki to pythagoras.
+
+netcast3_db.contacts_tb
+netcast3_db.users_tb
+netcast3_db.msisdn_tb
+netcast3_db.company_tb
+netcast3_db.group_tb
+netcast3_db.contacts_group_tb
+
+ 
+TRUNCATE following tables @ pythagoras:
+
+netcast_central_prod.companies
+netcast_db_migrate.company_list
+netcast_central_prod.db_connections
+
+Run Web Tool @ akamaru
+
+http://10.11.6.109/cgi-bin/netcast_migrator.cgi
+
+Then select companies to migrate.
+
+- This will migrate company details only.
+
+Stored Procedure:
+
+prc_netcast_migrate_companies

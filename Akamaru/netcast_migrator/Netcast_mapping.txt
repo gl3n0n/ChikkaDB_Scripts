@@ -1,0 +1,103 @@
+mysql> desc tmp_msisdn_v3;                               mysql> desc netcast3_db.msisdn_tb;                                                            
++--------+-------------+------+-----+---------+-------+  +--------------+-------------+------+-----+-------------------+-----------------------------+ 
+| Field  | Type        | Null | Key | Default | Extra |  | Field        | Type        | Null | Key | Default           | Extra                       | 
++--------+-------------+------+-----+---------+-------+  +--------------+-------------+------+-----+-------------------+-----------------------------+ 
+| id     | int(11)     | NO   | PRI | NULL    |       |  | id           | int(11)     | NO   | PRI | NULL              | auto_increment              | 
+| msisdn | varchar(19) | YES  | UNI | NULL    |       |  | contact_id   | int(11)     | NO   | MUL | NULL              |                             | 
+| brand  | varchar(15) | YES  | MUL | NULL    |       |  | msisdn       | varchar(19) | YES  | UNI | NULL              |                             | 
++--------+-------------+------+-----+---------+-------+  | brand_id     | int(11)     | NO   |     | 0                 |                             | 
+3 rows in set (0.00 sec)                                 | date_created | datetime    | YES  |     | NULL              |                             | 
+                                                         | date_updated | timestamp   | NO   |     | CURRENT_TIMESTAMP | on update CURRENT_TIMESTAMP | 
+                                                         | ref_tag      | tinyint(1)  | YES  |     | 0                 |                             | 
+                                                         +--------------+-------------+------+-----+-------------------+-----------------------------+ 
+                                                         7 rows in set (0.00 sec)                                                                             
+                                                                
+
+
+
+mysql> desc groups;                                                                                             mysql> desc netcast3_db.group_tb;                                                                                                      
++-------------------+-----------------------+------+-----+---------------------+-----------------------------+  +----------------+--------------+------+-----+-------------------+-----------------------------+                                    
+| Field             | Type                  | Null | Key | Default             | Extra                       |  | Field          | Type         | Null | Key | Default           | Extra                       |                                    
++-------------------+-----------------------+------+-----+---------------------+-----------------------------+  +----------------+--------------+------+-----+-------------------+-----------------------------+                                    
+| group_id          | int(11) unsigned      | NO   | PRI | NULL                | auto_increment              |  | id             | int(11)      | NO   | PRI | NULL              | auto_increment              |                                    
+| old_group_id      | int(11) unsigned      | YES  | MUL | NULL                |                             |  | name           | varchar(200) | NO   | MUL | NULL              |                             |                                    
+| user_id           | int(11) unsigned      | NO   | MUL | 0                   |                             |  | group_category | int(2)       | NO   |     | 0                 |                             |                                    
+| company_id        | int(11) unsigned      | NO   | MUL | 0                   |                             |  | user_id        | int(11)      | NO   |     | NULL              |                             |                                    
+| group_name        | varchar(64)           | NO   |     | NULL                |                             |  | company_id     | int(11)      | NO   |     | NULL              |                             |                                    
+| group_description | varchar(255)          | YES  |     | NULL                |                             |  | status_flag    | int(2)       | NO   |     | 1                 |                             |                                    
+| parent_group_id   | int(11) unsigned      | NO   | MUL | 0                   |                             |  | date_created   | datetime     | NO   |     | NULL              |                             |                                    
+| num_members       | mediumint(8) unsigned | NO   |     | 0                   |                             |  | date_updated   | timestamp    | NO   |     | CURRENT_TIMESTAMP | on update CURRENT_TIMESTAMP |                                    
+| date_created      | datetime              | NO   |     | 0000-00-00 00:00:00 |                             |  +----------------+--------------+------+-----+-------------------+-----------------------------+                                    
+| date_updated      | timestamp             | NO   |     | CURRENT_TIMESTAMP   | on update CURRENT_TIMESTAMP |  8 rows in set (0.00 sec)                                                                                                            
+| new_user_id       | int(11)               | YES  | MUL | NULL                |                             |
++-------------------+-----------------------+------+-----+---------------------+-----------------------------+
+11 rows in set (0.00 sec)
+
+
+mysql> desc contacts;                                                                                                                     mysql> desc netcast3_db.contacts_tb;                                                           
++----------------+-----------------------------------------------------+------+-----+---------------------+-----------------------------+ +--------------+---------------+------+-----+-------------------+-----------------------------+
+| Field          | Type                                                | Null | Key | Default             | Extra                       | | Field        | Type          | Null | Key | Default           | Extra                       |
++----------------+-----------------------------------------------------+------+-----+---------------------+-----------------------------+ +--------------+---------------+------+-----+-------------------+-----------------------------+
+| contact_id     | int(11) unsigned                                    | NO   | PRI | NULL                | auto_increment              | | id           | int(11)       | NO   | PRI | NULL              | auto_increment              |
+| old_contact_id | int(11) unsigned                                    | YES  | MUL | NULL                |                             | | company_id   | int(4)        | NO   | MUL | NULL              |                             |
+| user_id        | int(11) unsigned                                    | NO   | MUL | NULL                |                             | | name         | varchar(200)  | YES  |     | NULL              |                             |
+| company_id     | int(11) unsigned                                    | NO   |     | NULL                |                             | | alias        | varchar(50)   | YES  | MUL | NULL              |                             |
+| msisdn         | varchar(20)                                         | NO   |     | NULL                |                             | | msisdn_id    | int(11)       | NO   | MUL | NULL              |                             |
+| network        | varchar(16)                                         | NO   |     | UNKNOWN             |                             | | user_id      | int(11)       | NO   | MUL | NULL              |                             |
+| network_brand  | varchar(16)                                         | NO   |     | UNKNOWN             |                             | | age          | tinyint(1)    | YES  |     | 0                 |                             |
+| email          | varchar(255)                                        | NO   |     | NULL                |                             | | gender       | enum('f','m') | YES  |     | NULL              |                             |
+| first_name     | varchar(64)                                         | NO   | MUL | NULL                |                             | | address      | varchar(160)  | YES  |     | NULL              |                             |
+| middle_name    | varchar(64)                                         | NO   |     | NULL                |                             | | birthday     | date          | YES  |     | 0000-00-00        |                             |
+| last_name      | varchar(64)                                         | NO   |     | NULL                |                             | | email        | varchar(200)  | YES  |     | NULL              |                             |
+| info1          | varchar(255)                                        | YES  |     | NULL                |                             | | status_flag  | int(1)        | NO   | MUL | 1                 |                             |
+| info2          | varchar(255)                                        | YES  |     | NULL                |                             | | date_created | datetime      | NO   |     | NULL              |                             |
+| info3          | varchar(255)                                        | YES  |     | NULL                |                             | | date_updated | timestamp     | NO   |     | CURRENT_TIMESTAMP | on update CURRENT_TIMESTAMP |
+| info4          | varchar(255)                                        | YES  |     | NULL                |                             | +--------------+---------------+------+-----+-------------------+-----------------------------+
+| upload_type    | enum('UPLOADED','OTA','SHARED','SINGLE','FEEDBACK') | YES  |     | UPLOADED            |                             | 14 rows in set (0.00 sec)                                                                      
+| date_created   | datetime                                            | NO   |     | 0000-00-00 00:00:00 |                             |
+| date_updated   | timestamp                                           | NO   |     | CURRENT_TIMESTAMP   | on update CURRENT_TIMESTAMP |
+| new_user_id    | int(11)                                             | YES  | MUL | NULL                |                             |
++----------------+-----------------------------------------------------+------+-----+---------------------+-----------------------------+
+19 rows in set (0.00 sec)
+
+
+mysql> desc groups_contacts;                                                    mysql> desc netcast3_db.contacts_group_tb;                         
++--------------+------------------+------+-----+---------------------+-------+  +--------------+----------+------+-----+---------+----------------+                           
+| Field        | Type             | Null | Key | Default             | Extra |  | Field        | Type     | Null | Key | Default | Extra          |                          
++--------------+------------------+------+-----+---------------------+-------+  +--------------+----------+------+-----+---------+----------------+                          
+| company_id   | int(11) unsigned | NO   |     | 0                   |       |  | id           | int(11)  | NO   | PRI | NULL    | auto_increment |                          
+| user_id      | int(11) unsigned | NO   | PRI | 0                   |       |  | contact_id   | int(11)  | NO   | MUL | NULL    |                |                          
+| contact_id   | int(11) unsigned | NO   | PRI | 0                   |       |  | group_id     | int(11)  | NO   | MUL | NULL    |                |                          
+| group_id     | int(11) unsigned | NO   | PRI | 0                   |       |  | status_flag  | int(2)   | NO   |     | 1       |                |                          
+| date_created | datetime         | NO   |     | 0000-00-00 00:00:00 |       |  | date_created | datetime | NO   |     | NULL    |                |                          
+| new_user_id  | int(11)          | YES  |     | NULL                |       |  +--------------+----------+------+-----+---------+----------------+                          
++--------------+------------------+------+-----+---------------------+-------+  5 rows in set (0.00 sec)                                                                     
+6 rows in set (0.00 sec)                                                                                  
+
+
+mysql> desc users;                                                                                                                            mysql> desc netcast3_db.users_tb;                                                                                          
++-----------------+--------------------------------------------------------+------+-----+---------------------+-----------------------------+ +----------------+--------------+------+-----+-------------------+-----------------------------+
+| Field           | Type                                                   | Null | Key | Default             | Extra                       | | Field          | Type         | Null | Key | Default           | Extra                       |
++-----------------+--------------------------------------------------------+------+-----+---------------------+-----------------------------+ +----------------+--------------+------+-----+-------------------+-----------------------------+
+| user_id         | int(11) unsigned                                       | NO   | PRI | NULL                | auto_increment              | | id             | int(11)      | NO   | PRI | NULL              | auto_increment              |
+| company_id      | int(11) unsigned                                       | YES  | MUL | 0                   |                             | | name           | varchar(200) | NO   | MUL | NULL              |                             |
+| username        | varchar(255)                                           | YES  |     | NULL                |                             | | username       | varchar(200) | NO   |     | NULL              |                             |
+| password        | varchar(64)                                            | YES  |     | NULL                |                             | | password       | varchar(50)  | NO   |     | NULL              |                             |
+| name            | varchar(64)                                            | NO   |     | NULL                |                             | | pin            | varchar(8)   | NO   |     | NULL              |                             |
+| role            | varchar(64)                                            | NO   |     | NULL                |                             | | datetime       | datetime     | NO   |     | NULL              |                             |
+| email           | varchar(255)                                           | NO   |     | NULL                |                             | | email          | varchar(200) | NO   | MUL | NULL              |                             |
+| msisdn          | varchar(20)                                            | YES  | MUL | NULL                |                             | | mobile_number  | varchar(20)  | NO   |     | NULL              |                             |
+| msisdn_carrier  | varchar(32)                                            | YES  |     | NULL                |                             | | role           | int(2)       | NO   |     | 0                 |                             |
+| msisdn_brand    | varchar(32)                                            | YES  |     | NULL                |                             | | designation    | varchar(200) | YES  |     | NULL              |                             |
+| status          | enum('ACTIVE','DELETED','DISABLED','LOCKED','PENDING') | YES  | MUL | PENDING             |                             | | parent_user_id | int(11)      | NO   |     | NULL              |                             |
+| email_verified  | tinyint(1)                                             | NO   |     | 0                   |                             | | company_id     | int(11)      | NO   | MUL | NULL              |                             |
+| mobile_verified | tinyint(1)                                             | NO   |     | 0                   |                             | | status_flag    | int(2)       | NO   |     | 1                 |                             |
+| date_created    | datetime                                               | NO   |     | 0000-00-00 00:00:00 |                             | | date_created   | datetime     | NO   |     | NULL              |                             |
+| date_updated    | timestamp                                              | NO   |     | CURRENT_TIMESTAMP   | on update CURRENT_TIMESTAMP | | date_updated   | timestamp    | NO   |     | CURRENT_TIMESTAMP | on update CURRENT_TIMESTAMP |
+| old_user_id     | int(11)                                                | YES  |     | NULL                |                             | +----------------+--------------+------+-----+-------------------+-----------------------------+
+| v3_company_id   | int(11)                                                | YES  |     | NULL                |                             | 15 rows in set (0.00 sec)                                                                       
++-----------------+--------------------------------------------------------+------+-----+---------------------+-----------------------------+
+17 rows in set (0.00 sec)  
+
+
+                                                                     
