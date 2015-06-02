@@ -197,7 +197,7 @@ $worksheet[0]->merge_range($row, $col+21, $row, $col+39, 'Unique Subs per Packag
 $worksheet[0]->merge_range($row, $col+41, $row, $col+42, 'Hits & Optout per Day',   $format2);
 $worksheet[0]->merge_range($row, $col+44, $row, $col+47, 'MINs in Chikka APN',      $format2);
 $worksheet[0]->merge_range($row, $col+49, $row, $col+51, 'Unique Subs',             $format2);
-$worksheet[0]->merge_range($row, $col+53, $row, $col+56, 'Unique Subs per Brand',   $format2);
+$worksheet[0]->merge_range($row, $col+53, $row, $col+56, 'Active Subs per Brand',   $format2);
 $worksheet[0]->merge_range($row, $col+58, $row, $col+59, 'Liberation Auto-Renewal', $format2);
 $worksheet[0]->merge_range($row, $col+61, $row, $col+65, 'MINs in Chikka APN', $format2);
 $worksheet[0]->merge_range($row, $col+67, $row, $col+68, 'Powerapp BANDWIDTH', $format2);
@@ -670,10 +670,10 @@ $workbook->close();
  binmode STDOUT;
 
 $from = "powerapp_stats\@chikka.com";
-$to = "victor\@chikka.com,ps.java\@chikka.com,jomai\@chikka.com,ra\@chikka.com,ian\@chikka.com";
+$to = "victor\@chikka.com,ps.java\@chikka.com,jomai\@chikka.com,ra\@chikka.com,ian\@chikka.com,jldespanol\@voyagerinnovation.com";
 $cc = "dbadmins\@chikka.com";
-$to = "jomai\@chikka.com";
-$cc = "glenon\@chikka.com";
+#$to = "glenon\@chikka.com";
+#$cc = "glenon\@chikka.com";
 $Subject = "PowerApp Stats, ".$current_day;
 
 # Part using which the attachment is sent to an email #
@@ -711,6 +711,7 @@ $msg->attach(
 
 print "Mail Sent\n";
 $msg->send; # send via default
+
 
 
 

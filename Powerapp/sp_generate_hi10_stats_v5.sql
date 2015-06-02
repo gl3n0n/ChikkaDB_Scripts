@@ -36,26 +36,40 @@ begin
     select count(1), count(distinct phone) into @piso_hits,        @piso_uniq        from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='PISONET';
     select count(1), count(distinct phone) into @school_hits,      @school_uniq      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='BACKTOSCHOOL';
     select count(1), count(distinct phone) into @coc_hits,         @coc_uniq         from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='CLASHOFCLANS';
-    select count(1), count(distinct phone) into @youtube_hits,     @youtube_uniq     from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE' and source <> 'facebook_bundled_youtube';
-    select count(1), count(distinct phone) into @fy5_hits,         @fy5_uniq         from powerapp_log where datein >= @tran_dt and datein < @tran_nw and plan='YOUTUBE' and source = 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @youtube_hits,     @youtube_uniq     from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan like 'VIDEO%'; -- formerly YOUTUBE
+    select count(1), count(distinct phone) into @fy5_hits,         @fy5_uniq         from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='true'  and plan='YOUTUBE' and source = 'facebook_bundled_youtube';
     select count(1), count(distinct phone) into @myvolume_hits,    @myvolume_uniq    from powerapp_log where datein >= @tran_dt and datein < @tran_nw and plan='MYVOLUME';
 
-    select sum(IF(free='false',1,0)) into @total_hits from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false';
-    select count(distinct phone) into @total_uniq from (
-       select phone from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false'
-       union
-       select phone from powerapp_log where datein >= @tran_dt and datein < @tran_nw and plan='YOUTUBE' and source = 'facebook_bundled_youtube') t;
+    create temporary table if not exists tmp_mins_w_buys (phone varchar(12) not null, brand varchar(12) not null, hits int default 0, primary key (brand, phone));    
+    delete from tmp_mins_w_buys;
+    insert into tmp_mins_w_buys (brand, phone, hits)
+    select brand, phone, sum(hits) hits from (
+       select brand, phone, count(1) hits from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' group by brand, phone
+       union all
+       select brand, phone, count(1) hits from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='true' and plan='YOUTUBE' and source = 'facebook_bundled_youtube' group by brand, phone
+       union all
+       select 'SUN', phone, count(1) hits from powerapp_sun.powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' group by brand, phone
+       union all
+       select 'SUN', phone, count(1) hits from powerapp_sun.powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='true' and plan='YOUTUBE' and source = 'facebook_bundled_youtube' group by brand, phone) t
+    group by brand, phone;
 
-    select count(1), count(distinct phone) into @buddy_hits,       @buddy_uniq       from powerapp_log where datein >= @tran_dt and datein < @tran_nw and brand='BUDDY';
-    select count(1), count(distinct phone) into @postpd_hits,      @postpd_uniq      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and brand='POSTPD';
-    select count(1), count(distinct phone) into @tnt_hits,         @tnt_uniq         from powerapp_log where datein >= @tran_dt and datein < @tran_nw and brand='TNT';
-    select count(1), count(distinct phone) into @sun_hits,         @sun_uniq         from powerapp_sun.powerapp_log where datein >= @tran_dt and datein < @tran_nw;
+    select sum(hits) into @total_hits from tmp_mins_w_buys where brand <> 'SUN';
+    select ifnull(sum(hits),0) into @postpd_hits from tmp_mins_w_buys where brand='POSTPD';
+    select ifnull(sum(hits),0) into @tnt_hits from tmp_mins_w_buys where brand='TNT';
+    set @buddy_hits = greatest(@total_hits - (@postpd_hits+@tnt_hits),0);
+    select ifnull(sum(hits),0) into @sun_hits from tmp_mins_w_buys where brand='SUN';
+
+    select count(1) into @total_uniq from tmp_mins_w_buys;
+    select count(1) into @postpd_uniq from tmp_mins_w_buys where brand='POSTPD';
+    select count(1) into @tnt_uniq from tmp_mins_w_buys where brand='TNT';
+    select count(1) into @sun_uniq from tmp_mins_w_buys where brand='SUN';
+    set @buddy_uniq = greatest(@total_uniq - (@postpd_uniq+@tnt_uniq+@sun_uniq),0);
 
     -- LIBERATION AUTO-RENEWAL
     select count(distinct phone) into @tnt_auto_rn   from powerapp_log where datein >= @tran_dt and datein < @tran_nw and brand='TNT'   and plan = 'MYVOLUME' and source like 'auto%';
     select count(distinct phone) into @buddy_auto_rn from powerapp_log where datein >= @tran_dt and datein < @tran_nw and brand='BUDDY' and plan = 'MYVOLUME' and source like 'auto%';
 
-    SET @total_hits = @total_hits + @fy5_hits + @myvolume_hits;
+    SET @total_hits = @total_hits + @myvolume_hits;
     insert ignore into powerapp_dailyrep (
             tran_dt, total_hits, total_uniq, piso_hits, piso_uniq, school_hits, school_uniq, coc_hits, coc_uniq, youtube_hits, youtube_uniq, fy5_hits, fy5_uniq, myvolume_hits, myvolume_uniq,
             unli_hits, email_hits, social_hits, photo_hits, chat_hits, speed_hits, line_hits, snap_hits, tumblr_hits, waze_hits, wechat_hits, wiki_hits, free_social_hits, facebook_hits,
@@ -109,7 +123,7 @@ begin
        into  @NumUniq30d_buddy
        from powerapp_log
        where left(datein,7) = left(@tran_dt, 7)
-       and   brand = 'BUDDY';
+       and   brand like 'B%';
        select count(distinct phone)
        into  @NumUniq30d_postpd
        from powerapp_log
@@ -126,7 +140,7 @@ begin
        into  @NumActive30d_buddy
        from powerapp_log
        where left(datein,7) = left(@tran_dt, 7)
-       and   brand = 'BUDDY'
+       and   brand like 'B%'
        and   free='false';
        select count(distinct phone)
        into  @NumActive30d_postpd
@@ -146,7 +160,7 @@ begin
        from powerapp_log
        where datein >= date_sub(@tran_dt, interval 30 day)
        and datein < @tran_nw
-       and   brand = 'BUDDY';
+       and   brand like 'B%';
        select count(distinct phone)
        into  @NumUniq30d_postpd
        from powerapp_log
@@ -166,7 +180,7 @@ begin
        from powerapp_log
        where datein >= date_sub(@tran_dt, interval 30 day)
        and datein < @tran_nw
-       and   brand = 'BUDDY'
+       and   brand like 'B%'
        and   free='false';
        select count(distinct phone)
        into  @NumActive30d_postpd
@@ -248,10 +262,10 @@ begin
     select count(1), count(distinct phone) into @school_hits_24,      @school_uniq_24       from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='BACKTOSCHOOL';
     select count(1), count(distinct phone) into @coc_hits_24,         @coc_uniq_24          from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='CLASHOFCLANS';
     select count(1), count(distinct phone) into @youtube_hits_30,     @youtube_uniq_30      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE';
-    select count(1), count(distinct phone) into @youtube_hits_5,      @youtube_uniq_5       from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE' and validity = 1800  and source <> 'facebook_bundled_youtube';
-    select count(1), count(distinct phone) into @youtube_hits_15,     @youtube_uniq_15      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE' and validity = 7200  and source <> 'facebook_bundled_youtube';
-    select count(1), count(distinct phone) into @youtube_hits_50,     @youtube_uniq_50      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE' and validity = 18000 and source <> 'facebook_bundled_youtube';
-    select count(1), count(distinct phone) into @youtube_hits_120,    @youtube_uniq_120     from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='YOUTUBE' and validity > 18000 and source <> 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @youtube_hits_5,      @youtube_uniq_5       from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='VIDEO5';   -- plan='YOUTUBE' and validity = 1800  and source <> 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @youtube_hits_15,     @youtube_uniq_15      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='VIDEO15';  -- plan='YOUTUBE' and validity = 7200  and source <> 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @youtube_hits_50,     @youtube_uniq_50      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='VIDEO50';  -- plan='YOUTUBE' and validity = 18000 and source <> 'facebook_bundled_youtube';
+    select count(1), count(distinct phone) into @youtube_hits_120,    @youtube_uniq_120     from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='VIDEO120'; -- plan='YOUTUBE' and validity > 18000 and source <> 'facebook_bundled_youtube';
     select count(1), count(distinct phone) into @fy5_hits_5,          @fy5_uniq_5           from powerapp_log where datein >= @tran_dt and datein < @tran_nw and plan='YOUTUBE' and source = 'facebook_bundled_youtube';
 
     insert ignore into powerapp_validity_dailyrep
@@ -381,7 +395,7 @@ begin
       select count(1), count(distinct phone) into @free_social_hits_24, @free_social_uniq_24 from powerapp_log where datein >= @tran_dt and datein < @tran_nw and substring(datein, 12, 2) = lpad(@vCtr, 2, '0') and free='false' and plan='FREE_SOCIAL';
       select count(1), count(distinct phone) into @school_hits_24,      @school_uniq_24      from powerapp_log where datein >= @tran_dt and datein < @tran_nw and substring(datein, 12, 2) = lpad(@vCtr, 2, '0') and free='false' and plan='BACKTOSCHOOL';
       select count(1), count(distinct phone) into @coc_hits_24,         @coc_uniq_24         from powerapp_log where datein >= @tran_dt and datein < @tran_nw and substring(datein, 12, 2) = lpad(@vCtr, 2, '0') and free='false' and plan='CLASHOFCLANS';
-      select count(1), count(distinct phone) into @youtube_hits_30,     @youtube_uniq_30     from powerapp_log where datein >= @tran_dt and datein < @tran_nw and substring(datein, 12, 2) = lpad(@vCtr, 2, '0') and free='false' and plan='YOUTUBE';
+      select count(1), count(distinct phone) into @youtube_hits_30,     @youtube_uniq_30     from powerapp_log where datein >= @tran_dt and datein < @tran_nw and substring(datein, 12, 2) = lpad(@vCtr, 2, '0') and free='false' and plan like 'VIDEO%'; -- and plan='YOUTUBE';
       select count(1), count(distinct phone) into @total_hits,          @total_uniq          from powerapp_log where datein >= @tran_dt and datein < @tran_nw and substring(datein, 12, 2) = lpad(@vCtr, 2, '0') and free='false';
       SET @vCtr = @vCtr + 1;
 
@@ -451,9 +465,6 @@ GRANT EXECUTE ON PROCEDURE  sp_regenerate_hi10_stats  TO 'stats'@'10.11.4.164';
 GRANT EXECUTE ON PROCEDURE  sp_generate_month_days    TO 'stats'@'10.11.4.164';
 flush privileges;
 
-drop procedure sp_generate_month_days;
-delimiter //
-
 
 
 DROP EVENT evt_pwrapp_generate_stats;
@@ -489,6 +500,9 @@ DO
 //
 delimiter ;
 
+
+drop procedure sp_generate_month_days;
+delimiter //
 
 create procedure sp_generate_month_days (p_trandate date)
 begin

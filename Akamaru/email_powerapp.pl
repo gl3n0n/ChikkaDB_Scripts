@@ -160,8 +160,8 @@ $worksheet[3] = $workbook->add_worksheet("Buys");
 
 
    # START: Worksheet Buys (4th)
-   $strMain  = "select if(service='ClashofclansService', 'UnlimitedService', service) service, 
-                       upper(replace(service, 'Service', '')) service_desc, 
+   # $strMain  = "select if(service='ClashofclansService', 'UnlimitedService', service) service, 
+   $strMain  = "select service, upper(replace(service, 'Service', '')) service_desc, 
                        if (length(replace(service, 'Service', ''))<=5, 6, length(replace(service, 'Service', '')))+2  service_len
                 from powerapp_plan_services_mapping order by 2";
    $sth_main = $dbh_hi10->prepare($strMain);                                                                                                  
@@ -223,7 +223,7 @@ $workbook->close();
 # END: Create Excel workbook
 
 $from = "powerapp_stats\@chikka.com";
-$to = "victor\@chikka.com,ps.java\@chikka.com,jomai\@chikka.com,ra\@chikka.com,ian\@chikka.com";
+$to = "victor\@chikka.com,ps.java\@chikka.com,jomai\@chikka.com,ra\@chikka.com,ian\@chikka.com,jldespanol\@voyagerinnovation.com";
 $cc = "dbadmins\@chikka.com";
 #$to = "glenon\@chikka.com";
 #$cc = "glenon\@chikka.com";
