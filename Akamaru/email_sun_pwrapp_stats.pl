@@ -579,6 +579,7 @@ $workbook->close();
  binmode STDOUT;
 
 $from = "powerapp_stats\@chikka.com";
+$to = "victor\@chikka.com,ps.java\@chikka.com,jomai\@chikka.com,ra\@chikka.com,ian\@chikka.com,jldespanol\@voyagerinnovation.com";
 $cc = "dbadmins\@chikka.com";
 #$to = "jomai\@chikka.com";
 #$cc = "dbadmins\@chikka.com";
