@@ -39,9 +39,9 @@ begin
    and   brand = 'TNT'
    group by left(datein,10);
 
-   -- call sp_generate_retention_stats (p_trandate);
-   -- call sp_generate_15day_retention_stats(p_trandate);
-   -- call sp_generate_retention_stats_monthly (p_trandate);
+   call sp_generate_retention_stats (p_trandate);
+   call sp_generate_15day_retention_stats(p_trandate);
+   call sp_generate_retention_stats_monthly (p_trandate);
    call sp_generate_active_stats(date_add(p_trandate, interval 1 day));
 
    set @vCtr = 6;
@@ -685,3 +685,75 @@ begin
 end;
 //
 delimiter ;
+
+
+
+create table powerapp_new_mins_plan_retention (
+   tx_date  date not null,
+   plan     varchar(20) not null,
+   new_mins int(11) not null,
+   day_1    int(11) not null,
+   day_2    int(11) not null,
+   day_3    int(11) not null,
+   day_4    int(11) not null,
+   day_5    int(11) not null,
+   day_6    int(11) not null,
+   day_7    int(11) not null,
+   pct_1    int(11) not null,
+   pct_2    int(11) not null,
+   pct_3    int(11) not null,
+   pct_4    int(11) not null,
+   pct_5    int(11) not null,
+   pct_6    int(11) not null,
+   pct_7    int(11) not null,
+   primary key (tx_date,plan)
+);
+
+
+drop procedure sp_generate_new_mins_retention;
+delimiter //
+create procedure sp_generate_new_mins_retention (p_trandate date)
+begin
+   drop temporary table if exists tmp_plan_active_users;
+   drop temporary table if exists tmp_user_buys;
+   drop temporary table if exists tmp_user_xday;
+   create temporary table tmp_plan_active_users (phone varchar(12) not null, primary key (phone));
+   create temporary table tmp_user_buys (phone varchar(12) not null, datein date not null, plan varchar(20), hits int(11), primary key (phone, datein, plan));
+   create temporary table tmp_user_xday (phone varchar(12) not null, n_buys int(11), hits int(11), primary key (phone));
+
+   insert into tmp_plan_active_users select phone from powerapp_flu.new_subscribers where datein >= p_trandate and datein < date_add(p_trandate, interval 1 day) ;
+   insert into tmp_user_buys select phone, left(datein,10) date, plan, count(1) hits from powerapp_log a
+   where datein >= p_trandate and datein < date_add(p_trandate, interval 8 day) 
+   and exists (select 1 from tmp_plan_active_users b where a.phone = b.phone)
+   group by 1,2,3;
+
+   insert into tmp_user_xday select phone, count(1) no_times, sum(hits) hits from (
+   select phone, datein, sum(hits) hits from tmp_user_buys group by phone, datein 
+   ) t1 group by phone;
+
+   select count(1) into @NewMins from tmp_plan_active_users;
+   select count(distinct phone) into @nDay1 from tmp_user_buys where datein = p_trandate;
+   select count(distinct phone) into @nDay2 from tmp_user_buys where datein = date_add(p_trandate, interval 1 day);
+   select count(distinct phone) into @nDay3 from tmp_user_buys where datein = date_add(p_trandate, interval 2 day);
+   select count(distinct phone) into @nDay4 from tmp_user_buys where datein = date_add(p_trandate, interval 3 day);
+   select count(distinct phone) into @nDay5 from tmp_user_buys where datein = date_add(p_trandate, interval 4 day);
+   select count(distinct phone) into @nDay6 from tmp_user_buys where datein = date_add(p_trandate, interval 5 day);
+   select count(distinct phone) into @nDay7 from tmp_user_buys where datein = date_add(p_trandate, interval 6 day);
+
+   select p_trandate tx_date, @NewMins, @nDay1, @nDay2, @nDay3, @nDay4, @nDay5, @nDay6, @nDay7;
+   delete from powerapp_new_mins_retention where tx_date = p_trandate;
+   insert into powerapp_new_mins_retention
+          (tx_date, new_mins, 
+           day_2, day_3, day_4, day_5, day_6, day_7,
+           pct_2, pct_3, pct_4, pct_5, pct_6, pct_7 )
+   values (p_trandate, @NewMins, 
+           @nDay2, @nDay3, @nDay4, @nDay5, @nDay6, @nDay7, 
+           IF(@nDay2=0, 0, round((@nDay2/@NewMins)*100,0)), IF(@nDay3=0, 0, round((@nDay3/@NewMins)*100,0)), 
+           IF(@nDay4=0, 0, round((@nDay4/@NewMins)*100,0)), IF(@nDay5=0, 0, round((@nDay5/@NewMins)*100,0)), 
+           IF(@nDay6=0, 0, round((@nDay6/@NewMins)*100,0)), IF(@nDay7=0, 0, round((@nDay7/@NewMins)*100,0)) 
+          );
+   call sp_generate_new_mins_plan_retention(p_trandate);
+end;
+//
+delimiter ;
+

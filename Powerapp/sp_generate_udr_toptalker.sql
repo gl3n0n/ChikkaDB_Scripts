@@ -71,7 +71,27 @@ begin
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) select p_trandate, phone, tx_usage from powerapp_nds_toptalker a where tx_date = date_sub(p_trandate, interval 1 day) and not exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and b.tx_date = p_trandate) order by tx_usage desc limit 100; 
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) select p_trandate, phone, tx_usage from powerapp_nds_toptalker a where tx_date = date_sub(p_trandate, interval 2 day) and not exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and b.tx_date = p_trandate) order by tx_usage desc limit 100; 
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) select p_trandate, phone, tx_usage from powerapp_nds_toptalker a where tx_date = date_sub(p_trandate, interval 3 day) and not exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and b.tx_date = p_trandate) order by tx_usage desc limit 100; 
-   
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989659677', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989670051', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989670081', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989666457', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989666412', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989666359', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989666395', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989659685', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989659716', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989659771', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989687584', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989687585', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989687586', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989687587', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989687563', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989687552', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989687553', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989687554', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989687556', 0);
+   insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989687558', 0);
+      
    -- select '2015-02-24' tran_date, phone, sum(tx_usage) from tmp_top_100 group by 1,2 order by 3 desc limit 1000;
    select 'Third Pass....' Process;
    set @nCtr  = 0;

@@ -5,13 +5,14 @@ use lib "/home/dba_scripts/oist_stat/Lib";
 use common;
 use netcast_rep_constants;
 use DB;
+
 use Spreadsheet::WriteExcel;
-#use MIME::Lite;
-use Email::MIME;
+use MIME::Lite;
+
 
 $tdate = $ARGV[0];
 $vnum = $ARGV[1];
-#$txt_month = $argv[2];
+#$txt_month = $ARGV[2];
 #$vday=substr($tdate,8);
 
 
@@ -21,26 +22,26 @@ print $excel_file;
 
 my $smartBro = DB::DBconnect(netcast_rep_constants::netcast_DB,netcast_rep_constants::netcast_HOST,netcast_rep_constants::netcast_USER,netcast_rep_constants::netcast_PASSWORD);
 
-# create a new excel workbook
+# Create a new Excel workbook
 my $workbook = Spreadsheet::WriteExcel->new($excel_file);
-my $sth_rt;
-my @rowrst;
+my $sth_RT;
+my @rowRst;
 
-#  add and define a format
+#  Add and define a format
 
-$format_values11 = $workbook->add_format(fg_color => 9,bold=>0,font=>'calibri',size=>11,color=>'black',align=>'right',valign=>'vcenter',border=>1,);
+$format_values11 = $workbook->add_format(fg_color => 9,bold=>0,font=>'Calibri',size=>11,color=>'black',align=>'right',valign=>'vcenter',border=>1,);
 
-$format2 = $workbook->add_format(fg_color => 9,bold=>0,font=>'calibri',size=>11,color=>'black',align=>'left',valign=>'vcenter',border=>1,num_format => '#');
-$format3 = $workbook->add_format(fg_color => 'white',bold=>1,font=>'calibri',size=>12,color=>'black',align=>'center',valign=>'vcenter',border=>2,);
-$format4 = $workbook->add_format(fg_color => 'white',bold=>1,font=>'calibri',size=>14,color=>'black',align=>'center',valign=>'vcenter',border=>2,);
+$format2 = $workbook->add_format(fg_color => 9,bold=>0,font=>'Calibri',size=>11,color=>'black',align=>'left',valign=>'vcenter',border=>1,num_format => '#');
+$format3 = $workbook->add_format(fg_color => 'white',bold=>1,font=>'Calibri',size=>12,color=>'black',align=>'center',valign=>'vcenter',border=>2,);
+$format4 = $workbook->add_format(fg_color => 'white',bold=>1,font=>'Calibri',size=>14,color=>'black',align=>'center',valign=>'vcenter',border=>2,);
 
 #add worksheets
-my $tab1 = $workbook->add_worksheet("contacts_users_group");
-my $tab2 = $workbook->add_worksheet("v3listofcontactspergroup");
-my $tab3 = $workbook->add_worksheet("v4listofcontactspergroup");
-my $tab4 = $workbook->add_worksheet("migratedgroupscontactssummary");
+my $tab1 = $workbook->add_worksheet("Contacts_Users_Group");
+my $tab2 = $workbook->add_worksheet("V3ListOfContactsPerGroup");
+my $tab3 = $workbook->add_worksheet("V4ListOfContactsPerGroup");
+my $tab4 = $workbook->add_worksheet("MigratedGroupsContactsSummary");
 my $tab5 = $workbook->add_worksheet("V3 Validation Report");
- my $tab6 = $workbook->add_worksheet("Unsupported MSISDN");
+# my $tab6 = $workbook->add_worksheet("GroupSummary");
 # set columns and rows
 $tab1->set_column('a:u',15);
 $tab2->set_column('a:b',25);
@@ -370,81 +371,52 @@ while (my @rowRst = $sth_rt->fetchrow()) {
 $workbook->close();
 binmode STDOUT;
 
-#my $filesize = -s $excel_file;
+my $filesize = -s $excel_file;
 
 
 
-$from = "Netcast DBA\@chikka.com";
-$to = "jojo\@chikka.com,afaylona\@chikka.com,mllduran\@chikka.com,jocamat\@chikka.com,pegadraneda\@chikka.com,qc\@chikka.com,pdev-tech\@chikka.com";
-#$cc = "jojo\@chikka.com";
-#$cc = "afaylona\@chikka.com,mllduran\@chikka.com,jocamat\@chikka.com,pegadraneda\@chikka.com,qc\@chikka.com ";
-$Subject = "Netcast Migration Report : Netcast Company -  ".$tdate." - ".$vnum;
+   $from = "Netcast DBA\@chikka.com";
+   $to = "jojo\@chikka.com";
+   #$cc = "afaylona\@chikka.com,mllduran\@chikka.com,jocamat\@chikka.com,pegadraneda\@chikka.com ";
+  $Subject = "Netcast Migration Report : Netcast Company -  ".$tdate;
 
   # Part using which the attachment is sent to an email #
-my $message = Email::MIME->create(
-  header_str => [
-    From    => $from,
-    To      => $to,
-    Subject => $Subject,
-  ],
-  attributes => {
-    encoding => 'quoted-printable',
-    charset  => 'ISO-8859-1',
-  },
-  body_str => "Company $tdate Migrated Successfully.\n\nReport file is now available in our FTP server.\n\nFilename is netcast_migration_report_company_".$tdate."_".$vnum.".xls.\n\n\n\n\nRegards,\n\nCHIKKA DBA TEAM ",
-);
-
-# send the message
- use Email::Sender::Simple qw(sendmail);
- sendmail($message);
-
-
-
-
-
-
-
-
-#$msg = MIME::Lite->new(
-#        From     => $from,
-#        To       => $to,
-#	Cc      => $cc,
-#        Subject  => $Subject,
-#        Type     => 'File/xls');
+  $msg = MIME::Lite->new(
+        From     => $from,
+        To       => $to,
+	Cc      => $cc,
+        Subject  => $Subject,
+        Type     => 'File/xls',
      #   Path     => $excel_file
-                      #  )  ;
+                        )  ;
 
-#$msg->attach(
-#        Type => 'text/html',
-#        Data => qq{
-#            <body>
-#      		<p>
-#			<span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">  Company $tdate Migrated Successfully.</span></span></p>
-#		<p>
-#			<span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">Report file is now available in our FTP server.</span></span></p>
-#		<p>
-#                
-#                        <span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">Filename is netcast_migration_report_company_$tdate _ $vnum.xls.</span></span></p>
-#                <p>
-
-#
-#			&nbsp;</p>
-#		<div>
-#			<span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">Regards,</span></span></div>
-#		<div>
-#			<span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">CHIKKA DBA TEAM</span></span></div>
-#		<p>
-#			&nbsp;</p>
-#		<p>
-#			<br />
-#			&nbsp;</p>
-#            </body>
-#        },
-#    );
+    $msg->attach(
+        Type => 'text/html',
+        Data => qq{
+            <body>
+      		<p>
+			<span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">  Company $tdate Migrated Successfully.</span></span></p>
+		<p>
+			<span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">Please refer to the attachment.</span></span></p>
+		<p>
+			&nbsp;</p>
+		<div>
+			<span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">Regards,</span></span></div>
+		<div>
+			<span style="font-size:14px;"><span style="font-family: Calibri, helvetica, sans-serif;">CHIKKA DBA TEAM</span></span></div>
+		<p>
+			&nbsp;</p>
+		<p>
+			<br />
+			&nbsp;</p>
+            </body>
+        },
+    );
 	
 print "Mail Sent\n";
-#$msg->send; # send via default
+$msg->send; # send via default
 
+print "excel file too large\n";
 
 #######
 

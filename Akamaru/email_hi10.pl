@@ -159,22 +159,26 @@ $formatB->set_border(1);
 $strSQLhi10 = "select DATE_FORMAT(a.tran_dt,'%m/%d/%Y') tran_dt, 
                       a.unli_hits, a.email_hits, a.chat_hits,   a.photo_hits, a.social_hits, a.speed_hits, 
                       a.line_hits, a.snap_hits,  a.tumblr_hits, a.waze_hits,  a.wechat_hits,  
-                      a.facebook_hits, a.wiki_hits, a.free_social_hits, piso_hits, school_hits, 
+                      a.facebook_hits, a.wiki_hits, a.free_social_hits, a.piso_hits, a.school_hits, 
                       a.youtube_hits, a.fy5_hits, a.myvolume_hits, 
                       a.unli_uniq, a.email_uniq, a.chat_uniq,   a.photo_uniq, a.social_uniq, a.speed_uniq, 
                       a.line_uniq, a.snap_uniq,  a.tumblr_uniq, a.waze_uniq,  a.wechat_uniq, 
-                      a.facebook_uniq, a.wiki_uniq, a.free_social_uniq, piso_uniq, school_uniq, 
+                      a.facebook_uniq, a.wiki_uniq, a.free_social_uniq, a.piso_uniq, a.school_uniq, 
                       a.youtube_uniq, a.fy5_uniq, a.myvolume_uniq, 
                       a.total_hits, a.num_optout, 
                       IFNULL(b.num_subs,0) num_subs, a.concurrent_max_subs, a.concurrent_max_tm, a.concurrent_avg_subs,
-                      a.total_uniq, a.num_uniq_30d, 
+                      a.total_uniq, a.num_uniq_30d,
                       IF(a.tran_dt=last_day(a.tran_dt), concat(date_format(concat(left(a.tran_dt,8),'01') , '%b-%d'), ' to ', date_format(a.tran_dt, '%b-%d')), 
                                                         concat(date_format(date_sub(a.tran_dt, interval 30 day), '%b-%d'), ' to ', date_format(a.tran_dt, '%b-%d'))
                         ) period_covered,
-                      a.buddy_uniq, a.postpd_uniq, a.tnt_uniq, a.sun_uniq, a.tnt_auto_rn, a.buddy_auto_rn,
-                      c.from_selected, c.to_selected
+                      a.buddy_uniq, a.postpd_uniq, a.tnt_uniq, a.sun_uniq, 
+                      c.from_selected, c.to_selected, 
+                      a.buddy_uniq, a.postpd_uniq, a.tnt_uniq, a.sun_uniq, a.total_uniq, 
+                      a.num_actv_30d_buddy, a.num_actv_30d_postpd, a.num_actv_30d_tnt, ifnull(d.num_actv_30d,0), a.num_actv_30d+ifnull(d.num_actv_30d,0), 
+                      a.buddy_insuff_hits, a.tnt_insuff_hits, a.buddy_insuff_uniq, a.tnt_insuff_uniq
                from powerapp_dailyrep a left outer join powerapp_concurrent_subs b on a.tran_dt = b.tran_dt 
                                         left outer join upload_download_bandwidth c on a.tran_dt = c.tran_dt 
+                                        left outer join powerapp_sun.powerapp_dailyrep d on a.tran_dt = d.tran_dt 
                where left(a.tran_dt,7) = '".$current_date."' and a.tran_dt < curdate() 
                order by a.tran_dt";
 $sth_hi_10 = $dbh_hi10->prepare($strSQLhi10);
@@ -197,10 +201,13 @@ $worksheet[0]->merge_range($row, $col+21, $row, $col+39, 'Unique Subs per Packag
 $worksheet[0]->merge_range($row, $col+41, $row, $col+42, 'Hits & Optout per Day',   $format2);
 $worksheet[0]->merge_range($row, $col+44, $row, $col+47, 'MINs in Chikka APN',      $format2);
 $worksheet[0]->merge_range($row, $col+49, $row, $col+51, 'Unique Subs',             $format2);
-$worksheet[0]->merge_range($row, $col+53, $row, $col+56, 'Active Subs per Brand',   $format2);
-$worksheet[0]->merge_range($row, $col+58, $row, $col+59, 'Liberation Auto-Renewal', $format2);
-$worksheet[0]->merge_range($row, $col+61, $row, $col+65, 'MINs in Chikka APN', $format2);
-$worksheet[0]->merge_range($row, $col+67, $row, $col+68, 'Powerapp BANDWIDTH', $format2);
+$worksheet[0]->merge_range($row, $col+53, $row, $col+56, 'Unique Subs per Brand',   $format2);
+$worksheet[0]->merge_range($row, $col+58, $row, $col+62, 'MINs in Chikka APN',      $format2);
+$worksheet[0]->merge_range($row, $col+64, $row, $col+65, 'Powerapp BANDWIDTH',      $format2);
+$worksheet[0]->merge_range($row, $col+67, $row, $col+71, 'Unique Active Subs (Daily)',   $format2);
+$worksheet[0]->merge_range($row, $col+73, $row, $col+77, 'Unique Active Subs (Monthly)', $format2);
+$worksheet[0]->merge_range($row, $col+79, $row, $col+80, 'Insuff Bal (Hits)',       $format2);
+$worksheet[0]->merge_range($row, $col+81, $row, $col+82, 'Insuff Bal (Unique)',     $format2);
 
 $worksheet[0]->set_column(0,0,9);
 $worksheet[0]->set_column(1,1,9);
@@ -235,11 +242,15 @@ $worksheet[0]->set_column(51,51,16);
 $worksheet[0]->set_column(52,52,1);
 $worksheet[0]->set_column(53,56,9);
 $worksheet[0]->set_column(57,57,1);
-$worksheet[0]->set_column(58,59,12);
-$worksheet[0]->set_column(60,60,1);
-$worksheet[0]->set_column(61,65,12);
+$worksheet[0]->set_column(58,62,9);
+$worksheet[0]->set_column(63,63,1);
+$worksheet[0]->set_column(64,65,16);
 $worksheet[0]->set_column(66,66,1);
-$worksheet[0]->set_column(67,68,16);
+$worksheet[0]->set_column(67,71,9);
+$worksheet[0]->set_column(72,72,1);
+$worksheet[0]->set_column(73,77,9);
+$worksheet[0]->set_column(78,78,1);
+$worksheet[0]->set_column(79,82,10);
 #
 $worksheet[0]->write($row+$i, $col,     'DATE',           $format);
 $worksheet[0]->write($row+$i, $col+1,   'UNLI',           $format);
@@ -299,25 +310,39 @@ $worksheet[0]->write($row+$i, $col+54,  'POSTPAID',       $format);
 $worksheet[0]->write($row+$i, $col+55,  'TNT',            $format);
 $worksheet[0]->write($row+$i, $col+56,  'SUN',            $format);
 
-$worksheet[0]->write($row+$i, $col+58,  'TNT',            $format);
-$worksheet[0]->write($row+$i, $col+59,  'BUDDY',          $format);
+$worksheet[0]->write($row+$i, $col+58,  'PREPAID',        $format);
+$worksheet[0]->write($row+$i, $col+59,  'POSTPAID',       $format);
+$worksheet[0]->write($row+$i, $col+60,  'TNT',            $format);
+$worksheet[0]->write($row+$i, $col+61,  'OTHERS',         $format);
+$worksheet[0]->write($row+$i, $col+62,  'TOTAL',          $format);
 
-$worksheet[0]->write($row+$i, $col+61,  'PREPAID',        $format);
-$worksheet[0]->write($row+$i, $col+62,  'POSTPAID',       $format);
-$worksheet[0]->write($row+$i, $col+63,  'TNT',            $format);
-$worksheet[0]->write($row+$i, $col+64,  'OTHERS',         $format);
-$worksheet[0]->write($row+$i, $col+65,  'TOTAL',          $format);
+$worksheet[0]->write($row+$i, $col+64,  'RECEIVED',       $format);
+$worksheet[0]->write($row+$i, $col+65,  'TRANSMIT',       $format);
 
-$worksheet[0]->write($row+$i, $col+67,  'RECEIVED',       $format);
-$worksheet[0]->write($row+$i, $col+68,  'TRANSMIT',     $format);
+$worksheet[0]->write($row+$i, $col+67,  'PREPAID',        $format);
+$worksheet[0]->write($row+$i, $col+68,  'POSTPAID',       $format);
+$worksheet[0]->write($row+$i, $col+69,  'TNT',            $format);
+$worksheet[0]->write($row+$i, $col+70,  'SUN',            $format);
+$worksheet[0]->write($row+$i, $col+71,  'TOTAL',          $format);
+
+$worksheet[0]->write($row+$i, $col+73,  'PREPAID',        $format);
+$worksheet[0]->write($row+$i, $col+74,  'POSTPAID',       $format);
+$worksheet[0]->write($row+$i, $col+75,  'TNT',            $format);
+$worksheet[0]->write($row+$i, $col+76,  'SUN',            $format);
+$worksheet[0]->write($row+$i, $col+77,  'TOTAL',          $format);
+
+$worksheet[0]->write($row+$i, $col+79,  'BUDDY',          $format);
+$worksheet[0]->write($row+$i, $col+80,  'TNT',            $format);
+$worksheet[0]->write($row+$i, $col+81,  'BUDDY',          $format);
+$worksheet[0]->write($row+$i, $col+82,  'TNT',            $format);
 
 while (@rowRst = $sth_hi_10a->fetchrow()) {
    $i++;
-   $worksheet[0]->write($row+$i, $col+61,   $rowRst[1],   $format1);
-   $worksheet[0]->write($row+$i, $col+62,   $rowRst[2],   $format1);
-   $worksheet[0]->write($row+$i, $col+63,   $rowRst[3],   $format1);
-   $worksheet[0]->write($row+$i, $col+64,   $rowRst[4],   $format1);
-   $worksheet[0]->write($row+$i, $col+65,   $rowRst[5],   $format1);
+   $worksheet[0]->write($row+$i, $col+58,   $rowRst[1],   $format1);
+   $worksheet[0]->write($row+$i, $col+59,   $rowRst[2],   $format1);
+   $worksheet[0]->write($row+$i, $col+60,   $rowRst[3],   $format1);
+   $worksheet[0]->write($row+$i, $col+61,   $rowRst[4],   $format1);
+   $worksheet[0]->write($row+$i, $col+62,   $rowRst[5],   $format1);
 }
 
 $i=1;
@@ -365,8 +390,8 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
    $worksheet[0]->write($row+$i, $col+41,  $rowRst[39],  $format1);
    $worksheet[0]->write($row+$i, $col+42,  $rowRst[40],  $format1);
    $worksheet[0]->write($row+$i, $col+44,  $rowRst[41],  $format1);
-   $worksheet[0]->write($row+$i, $col+45,  $rowRst[42],  $format1s);
-   $worksheet[0]->write($row+$i, $col+46,  $rowRst[43],  $format1);
+   $worksheet[0]->write($row+$i, $col+45,  $rowRst[42],  $format1);
+   $worksheet[0]->write($row+$i, $col+46,  $rowRst[43],  $format1s);
    $worksheet[0]->write($row+$i, $col+47,  $rowRst[44],  $format1);
    $worksheet[0]->write($row+$i, $col+49,  $rowRst[45],  $format1);
    $worksheet[0]->write($row+$i, $col+50,  $rowRst[46],  $format1);
@@ -375,10 +400,22 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
    $worksheet[0]->write($row+$i, $col+54,  $rowRst[49],  $format1);
    $worksheet[0]->write($row+$i, $col+55,  $rowRst[50],  $format1);
    $worksheet[0]->write($row+$i, $col+56,  $rowRst[51],  $format1);
-   $worksheet[0]->write($row+$i, $col+58,  $rowRst[52],  $format1);
-   $worksheet[0]->write($row+$i, $col+59,  $rowRst[53],  $format1);
+   $worksheet[0]->write($row+$i, $col+64,  $rowRst[52],  $format1);
+   $worksheet[0]->write($row+$i, $col+65,  $rowRst[53],  $format1);
    $worksheet[0]->write($row+$i, $col+67,  $rowRst[54],  $format1);
    $worksheet[0]->write($row+$i, $col+68,  $rowRst[55],  $format1);
+   $worksheet[0]->write($row+$i, $col+69,  $rowRst[56],  $format1);
+   $worksheet[0]->write($row+$i, $col+70,  $rowRst[57],  $format1);
+   $worksheet[0]->write($row+$i, $col+71,  $rowRst[58],  $format1);
+   $worksheet[0]->write($row+$i, $col+73,  $rowRst[59],  $format1);
+   $worksheet[0]->write($row+$i, $col+74,  $rowRst[60],  $format1);
+   $worksheet[0]->write($row+$i, $col+75,  $rowRst[61],  $format1);
+   $worksheet[0]->write($row+$i, $col+76,  $rowRst[62],  $format1);
+   $worksheet[0]->write($row+$i, $col+77,  $rowRst[63],  $format1);
+   $worksheet[0]->write($row+$i, $col+79,  $rowRst[64],  $format1);
+   $worksheet[0]->write($row+$i, $col+80,  $rowRst[65],  $format1);
+   $worksheet[0]->write($row+$i, $col+81,  $rowRst[66],  $format1);
+   $worksheet[0]->write($row+$i, $col+82,  $rowRst[67],  $format1);
 }
 
 $strSQLhi10 = "select DATE_FORMAT(tran_dt,'%b %Y'), num_subs 
@@ -670,9 +707,9 @@ $workbook->close();
  binmode STDOUT;
 
 $from = "powerapp_stats\@chikka.com";
-$to = "victor\@chikka.com,ps.java\@chikka.com,jomai\@chikka.com,ra\@chikka.com,ian\@chikka.com,jldespanol\@voyagerinnovation.com";
+$to = "victor\@chikka.com,ps.java\@chikka.com,jomai\@chikka.com,alfie\@chikka.com,tdelacruz\@chikka.com,ra\@chikka.com,ian\@chikka.com,jldespanol\@voyagerinnovation.com";
 $cc = "dbadmins\@chikka.com";
-#$to = "glenon\@chikka.com";
+#$to = "jomai\@chikka.com";
 #$cc = "glenon\@chikka.com";
 $Subject = "PowerApp Stats, ".$current_day;
 

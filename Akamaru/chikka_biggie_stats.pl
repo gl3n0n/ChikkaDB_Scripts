@@ -46,20 +46,21 @@ $format4 = $workbook->add_format(fg_color => 'yellow',bold=>1,font=>'Calibri',si
  my $tab1 = $workbook->add_worksheet("Smart Bro Stats");
 
 #set columns and rows
-$tab1->set_column('a:f',15);
+$tab1->set_column('a:g',15);
 
 
 #tab 1
 $tab1->write('a3','Date',$format_date);
 $tab1->merge_range('b3:c3','Payment',$format2);
 $tab1->merge_range('d3:e3','Availment',$format2);
-$tab1->write('f3','Black List',$format4);
+$tab1->merge_range('f3:g3','Black List',$format2);
 
 $tab1->write('b4',"Transaction",$format3);
 $tab1->write('c4',"Unique",$format3);
 $tab1->write('d4',"Transaction",$format3);
 $tab1->write('e4',"Unique",$format3);
 $tab1->write('f4',"Transaction",$format3);
+$tab1->write('g4',"Unique",$format3);
 
 my $row=3;
 my $i=0;
@@ -73,7 +74,7 @@ $strgetstat="select * from biggie_summary_excel where tx_date like '".$mdate."%'
                 {
                         $i++;
 
-                        for ( $f=0; $f <= 5; $f++)
+                        for ( $f=0; $f <= 6; $f++)
                                 {
                                 $tab1->write($row+$i, $col+$f,    $rowRst[$f], ($i % 2 ==0)? $format_values11 : $format_values21);
                                 }

@@ -65,6 +65,11 @@ begin
     select count(1) into @sun_uniq from tmp_mins_w_buys where brand='SUN';
     set @buddy_uniq = greatest(@total_uniq - (@postpd_uniq+@tnt_uniq+@sun_uniq),0);
 
+    -- Insuff balance
+    select count(1), count(distinct phone) into @buddy_insuff_hits, @buddy_insuff_uniq from ureg_error_log where datein >= @tran_dt and datein < @tran_nw and error_code=3904;
+    select count(1), count(distinct phone) into @postpd_insuff_hits, @postpd_insuff_uniq from ureg_error_log where datein >= @tran_dt and datein < @tran_nw and error_code=2609;
+    select count(1), count(distinct phone) into @tnt_insuff_hits, @tnt_insuff_uniq from ureg_error_log where datein >= @tran_dt and datein < @tran_nw and error_code=1006;
+                    
     -- LIBERATION AUTO-RENEWAL
     select count(distinct phone) into @tnt_auto_rn   from powerapp_log where datein >= @tran_dt and datein < @tran_nw and brand='TNT'   and plan = 'MYVOLUME' and source like 'auto%';
     select count(distinct phone) into @buddy_auto_rn from powerapp_log where datein >= @tran_dt and datein < @tran_nw and brand='BUDDY' and plan = 'MYVOLUME' and source like 'auto%';
@@ -74,11 +79,13 @@ begin
             tran_dt, total_hits, total_uniq, piso_hits, piso_uniq, school_hits, school_uniq, coc_hits, coc_uniq, youtube_hits, youtube_uniq, fy5_hits, fy5_uniq, myvolume_hits, myvolume_uniq,
             unli_hits, email_hits, social_hits, photo_hits, chat_hits, speed_hits, line_hits, snap_hits, tumblr_hits, waze_hits, wechat_hits, wiki_hits, free_social_hits, facebook_hits,
             unli_uniq, email_uniq, social_uniq, photo_uniq, chat_uniq, speed_uniq, line_uniq, snap_uniq, tumblr_uniq, waze_uniq, wechat_uniq, wiki_uniq, free_social_uniq, facebook_uniq,
-            buddy_hits, buddy_uniq, postpd_hits, postpd_uniq, tnt_hits, tnt_uniq, sun_hits, sun_uniq, tnt_auto_rn, buddy_auto_rn )
+            buddy_hits, buddy_uniq, postpd_hits, postpd_uniq, tnt_hits, tnt_uniq, sun_hits, sun_uniq, tnt_auto_rn, buddy_auto_rn,
+            buddy_insuff_hits, postpd_insuff_hits, tnt_insuff_hits, buddy_insuff_uniq, postpd_insuff_uniq, tnt_insuff_uniq )
     values (@tran_dt, @total_hits, @total_uniq, @piso_hits, @piso_uniq, @school_hits, @school_uniq, @coc_hits, @coc_uniq, @youtube_hits, @youtube_uniq, @fy5_hits, @fy5_uniq, @myvolume_hits, @myvolume_uniq, 
             @unli_hits, @email_hits, @social_hits, @photo_hits, @chat_hits, @speed_hits, @line_hits, @snap_hits, @tumblr_hits, @waze_hits, @wechat_hits, @wiki_hits, @free_social_hits, @facebook_hits,
             @unli_uniq, @email_uniq, @social_uniq, @photo_uniq, @chat_uniq, @speed_uniq, @line_uniq, @snap_uniq, @tumblr_uniq, @waze_uniq, @wechat_uniq, @wiki_uniq, @free_social_uniq, @facebook_uniq,
-            @buddy_hits, @buddy_uniq, @postpd_hits, @postpd_uniq, @tnt_hits, @tnt_uniq, @sun_hits, @sun_uniq, @tnt_auto_rn, @buddy_auto_rn);
+            @buddy_hits, @buddy_uniq, @postpd_hits, @postpd_uniq, @tnt_hits, @tnt_uniq, @sun_hits, @sun_uniq, @tnt_auto_rn, @buddy_auto_rn,
+            @buddy_insuff_hits, @postpd_insuff_hits, @tnt_insuff_hits, @buddy_insuff_uniq, @postpd_insuff_uniq, @tnt_insuff_uniq);
 
     select max(timein)
     into   @vTimeIn

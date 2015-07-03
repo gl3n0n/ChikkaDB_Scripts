@@ -125,12 +125,23 @@ begin
        into  @NumUniq30d
        from powerapp_log
        where left(datein,7) = left(@tran_dt, 7);
+       select count(distinct phone)
+       into  @NumActive30d
+       from powerapp_log
+       where left(datein,7) = left(@tran_dt, 7)
+       and   free='false';
     else
        select count(distinct phone)
        into  @NumUniq30d
        from powerapp_log
        where datein >= date_sub(@tran_dt, interval 30 day)
        and datein < @tran_nw;
+       select count(distinct phone)
+       into  @NumActive30d
+       from powerapp_log
+       where datein >= date_sub(@tran_dt, interval 30 day)
+       and datein < @tran_nw
+       and   free='false';
     end if;
 
     update powerapp_dailyrep
@@ -138,7 +149,8 @@ begin
            concurrent_max_tm= IFNULL(@vTimeIn,'00:00'),
            concurrent_max_subs=IFNULL(@vNumSubs,0),
            concurrent_avg_subs=IFNULL(@vAvgSubs,0),
-           num_uniq_30d=IFNULL(@NumUniq30d,0)
+           num_uniq_30d=IFNULL(@NumUniq30d,0),
+           num_actv_30d=IFNULL(@NumActive30d,0)
     where  tran_dt = @tran_dt;
 
     select count(1), count(distinct phone) into @unli_hits_3,         @unli_uniq_3          from powerapp_log where datein >= @tran_dt and datein < @tran_nw and free='false' and plan='UNLI' and validity<86400;

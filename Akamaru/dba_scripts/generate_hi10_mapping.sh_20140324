@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Set Variables
+date_display=`date '+%Y-%m-%d' --date='yesterday'`
+date_file=`date '+%Y_%m_%d' --date='yesterday'`
+#email_to="victor@chikka.com,ps.java@chikka.com"
+email_to="afaylona@chikka.com"
+#email_cc="dbadmins@chikka.com"
+fname1='/tmp/Powerapp_Mapping_Prepaid_list_'$date_file'.csv'
+fname2='/tmp/Powerapp_Mapping_TNT_list_'$date_file'.csv'
+fname3='/tmp/Powerapp_Mapping_Postpaid_list_'$date_file'.csv'
+p='stats'
+rm -f $fname1.gz
+rm -f $fname2.gz
+rm -f $fname3.gz
+
+# Generate  Mapping Usage
+echo " SET net_write_timeout=12000;SET net_read_timeout=12000;select sqltext from (select 0 seqno, 'PHONE,DURATION(m),MAP DATE, MAP IPADDR, UNMAP DATE, UNMAP IPADDR, BRAND' sqltext union 
+select 1, concat(phone, ',', round((unmap_ts-map_ts)/1000/60,3), ',', map_datein, ',', map_ipadd, ',', unmap_datein, ',', unmap_ipadd) sqltext 
+from powerapp_mapping_usage where brand = 'BUDDY') t order by seqno
+" | mysql -ustats -p$p archive_powerapp_flu -h10.11.4.164 -P3309 | grep -v sqltext > $fname1
+gzip -9v $fname1
+
+echo "  SET net_write_timeout=12000;SET net_read_timeout=12000;select sqltext from (select 0 seqno, 'PHONE,DURATION(m),MAP DATE, MAP IPADDR, UNMAP DATE, UNMAP IPADDR' sqltext union 
+select 1, concat(phone, ',', round((unmap_ts-map_ts)/1000/60,3), ',', map_datein, ',', map_ipadd, ',', unmap_datein, ',', unmap_ipadd) sqltext 
+from powerapp_mapping_usage where brand = 'TNT') t order by seqno
+" | mysql -ustats -p$p archive_powerapp_flu -h10.11.4.164 -P3309 | grep -v phone > $fname2
+gzip -9v $fname2
+
+echo " SET net_write_timeout=12000;SET net_read_timeout=12000;select sqltext from (select 0 seqno, 'PHONE,DURATION(m),MAP DATE, MAP IPADDR, UNMAP DATE, UNMAP IPADDR' sqltext union 
+select 1, concat(phone, ',', round((unmap_ts-map_ts)/1000/60,3), ',', map_datein, ',', map_ipadd, ',', unmap_datein, ',', unmap_ipadd) sqltext 
+from powerapp_mapping_usage where brand = 'POSTPD') t order by seqno
+" | mysql -ustats -p$p archive_powerapp_flu -h10.11.4.164 -P3309 | grep -v phone > $fname3
+gzip -9v $fname3
+
+
+# Send mail PREPAID
+echo "PowerApp Mapping for Smart Prepaid MIN's as of $date_display.
+
+Please refer to the attachment.
+
+
+
+Regards,
+CHIKKA DBA TEAM
+" | mutt "$email_to" -c"$email_cc" -e"my_hdr From:do-not-reply@chikka.com<do-not-reply@chikka.com>" -s"Powerapp mapping for Smart Prepaid MINs - $date_display" -a $fname1.gz
+
+# Send mail TNT
+echo "PowerApp Mapping for TNT MIN's as of $date_display.
+
+Please refer to the attachment.
+
+
+
+Regards,
+CHIKKA DBA TEAM
+" | mutt "$email_to" -c"$email_cc" -e"my_hdr From:do-not-reply@chikka.com<do-not-reply@chikka.com>" -s"Powerapp mapping for TNT MINs - $date_display" -a $fname2.gz
+
+# Send mail POSTPAID
+echo "PowerApp Mapping for Smart Postpaid MIN's as of $date_display.
+
+Please refer to the attachment.
+
+
+
+Regards,
+CHIKKA DBA TEAM
+" | mutt "$email_to" -c"$email_cc" -e"my_hdr From:do-not-reply@chikka.com<do-not-reply@chikka.com>" -s"Powerapp mapping for Smart Postpaid MINs - $date_display" -a $fname3.gz
+
+
