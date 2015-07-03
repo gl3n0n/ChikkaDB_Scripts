@@ -30,19 +30,24 @@ select tran_dt, 0 buddy, 0 postpd, 0 others, num_subs sun from powerapp_sun.powe
 
 
 # Active Users (hi10.powerapp_flu)
-select tran_dt, num_actv_30d_buddy, num_actv_30d_postpd from powerapp_dailyrep where tran_dt = last_day(tran_dt);
-select tran_dt, num_actv_30d from powerapp_sun.powerapp_dailyrep where tran_dt = last_day(tran_dt);
-182985
-175776
-257420
-255031
-234049
+select tran_dt, num_actv_30d_buddy buddy, num_actv_30d_tnt tnt, num_actv_30d_postpd postpd from powerapp_flu.powerapp_dailyrep where tran_dt = last_day(tran_dt);
+select tran_dt, num_actv_30d sun from powerapp_sun.powerapp_dailyrep where tran_dt = last_day(tran_dt);
 
 
-# TOTAL REVENUE (dbreplica.archive_powerapp_flu)
-insert into powerapp_brand_dailyrep select * from powerapp_flu.powerapp_brand_dailyrep where tran_dt>= '2015-05-23';
+# TOTAL AVAILMENTS & REVENUE (dbreplica.archive_powerapp_flu)
+
+   insert into powerapp_brand_dailyrep select * from powerapp_flu.powerapp_brand_dailyrep where tran_dt>= '2015-06-25' and tran_dt < curdate();
+
+   insert into powerapp_sun_brand_dailyrep
+   select tran_dt, plan, sum(hits_pre), sum(hits_ppd), sum(hits_tnt), sum(hits_tot), sum(uniq_pre), sum(uniq_ppd), sum(uniq_tnt), sum(uniq_tot) from (
+   select left(datein, 10) tran_dt, plan, count(1) hits_pre, 0 hits_ppd, 0 hits_tnt, 0 hits_tot, count(distinct phone) uniq_pre, 0 uniq_ppd, 0 uniq_tnt, 0 uniq_tot from powerapp_sun.powerapp_log where free='false' and brand='PREPAID'  and datein >= '2015-06-01' and datein < curdate() group by tran_dt, plan union
+   select left(datein, 10) tran_dt, plan, 0 hits_pre, count(1) hits_ppd, 0 hits_tnt, 0 hits_tot, 0 uniq_pre, count(distinct phone) uniq_ppd, 0 uniq_tnt, 0 uniq_tot from powerapp_sun.powerapp_log where free='false' and brand='POSTPAID' and datein >= '2015-06-01' and datein < curdate() group by tran_dt, plan union
+   select left(datein, 10) tran_dt, plan, 0 hits_pre, 0 hits_ppd, 0 hits_tnt, count(1) hits_tot, 0 uniq_pre, 0 uniq_ppd, 0 uniq_tnt, count(distinct phone) uniq_tot from powerapp_sun.powerapp_log where free='false' and datein >= '2015-06-01' and datein < curdate() group by tran_dt, plan
+   ) temp_table group by tran_dt, plan;
+
 
 select date_format(tran_dt, '%Y-%b') Month, sum(total_hits) total_hits,
+       sum(buddy_hits) buddy_hits, sum(tnt_hits) tnt_hits, sum(ppd_hits) ppd_hits,
        sum(buddy_amt+tnt_amt+ppd_amt) total_amt,
        sum(buddy_amt) buddy_amt, sum(tnt_amt) tnt_amt, sum(ppd_amt) ppd_amt 
 from (
@@ -52,15 +57,9 @@ select s.tran_dt tran_dt,sum((s.hits_pre+s.hits_tnt+s.hits_ppd)) total_hits,
        sum(s.hits_pre*(m.price)) buddy_amt, sum(s.hits_tnt*(m.price)) tnt_amt, sum(s.hits_ppd*(m.price)) ppd_amt
 from powerapp_brand_dailyrep s, powerapp_plan_services_mapping m
 where s.plan=m.plan
+and   m.price >  0
 group by s.tran_dt
 ) t1a group by 1 order by tran_dt;
-
-   insert into powerapp_sun_brand_dailyrep
-   select tran_dt, plan, sum(hits_pre), sum(hits_ppd), sum(hits_tnt), sum(hits_tot), sum(uniq_pre), sum(uniq_ppd), sum(uniq_tnt), sum(uniq_tot) from (
-   select left(datein, 10) tran_dt, plan, count(1) hits_pre, 0 hits_ppd, 0 hits_tnt, 0 hits_tot, count(distinct phone) uniq_pre, 0 uniq_ppd, 0 uniq_tnt, 0 uniq_tot from powerapp_sun.powerapp_log where free='false' and brand='PREPAID'  and datein >= '2015-05-25' and datein < '2015-06-01' group by tran_dt, plan union
-   select left(datein, 10) tran_dt, plan, 0 hits_pre, count(1) hits_ppd, 0 hits_tnt, 0 hits_tot, 0 uniq_pre, count(distinct phone) uniq_ppd, 0 uniq_tnt, 0 uniq_tot from powerapp_sun.powerapp_log where free='false' and brand='POSTPAID' and datein >= '2015-05-25' and datein < '2015-06-01' group by tran_dt, plan union
-   select left(datein, 10) tran_dt, plan, 0 hits_pre, 0 hits_ppd, 0 hits_tnt, count(1) hits_tot, 0 uniq_pre, 0 uniq_ppd, 0 uniq_tnt, count(distinct phone) uniq_tot from powerapp_sun.powerapp_log where free='false' and datein >= '2015-05-25' and datein < '2015-06-01' group by tran_dt, plan
-   ) temp_table group by tran_dt, plan;
 
 select date_format(tran_dt, '%Y-%b') Month, sum(total_hits) total_hits, sum(total_amt) total_amt
 from (
@@ -94,10 +93,12 @@ group by s.tran_dt
 | 2015-Apr |    1762646 |  10676123 |   7309230 |  3096323 |  270570 |  | 2015-Apr |     203960 |    556180 |
 | 2015-May |    1133120 |   8450090 |   8086956 |    83984 |  279150 |  | 2015-May |     215575 |    518195 |
 +----------+------------+-----------+-----------+----------+---------+  +----------+------------+-----------+
+
+
                                       
 select tx_mon, plan, sum(hits) hits from (
-select left(tran_dt,7) tx_mon, plan, sum(hits_pre+hits_ppd) hits from powerapp_brand_dailyrep where tran_dt >= '2015-01-01' and plan not in ('MYVOLUME', 'OPTOUT') group by 1,2 union
-select left(tran_dt,7) tx_mon, plan, sum(hits_pre+hits_ppd) hits from powerapp_brand_dailyrep where tran_dt >= '2015-01-01' and plan not in ('MYVOLUME', 'OPTOUT') group by 1,2 
+select left(tran_dt,7) tx_mon, plan, sum(hits_pre+hits_ppd) hits from powerapp_brand_dailyrep where tran_dt >= '2015-05-01' and plan not in ('MYVOLUME', 'OPTOUT') group by 1,2 union
+select left(tran_dt,7) tx_mon, plan, sum(hits_pre+hits_ppd) hits from powerapp_brand_dailyrep where tran_dt >= '2015-05-01' and plan not in ('MYVOLUME', 'OPTOUT') group by 1,2 
 ) t1 group by tx_mon, plan having sum(hits) > 0
 order by 1,3 desc;
 +---------+--------------+--------+
