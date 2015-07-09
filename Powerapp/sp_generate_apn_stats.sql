@@ -57,3 +57,13 @@ select brand, count(distinct phone) mo_uniq into outfile '/tmp/mo_fi_uniq.csv' f
 select brand, count(distinct phone) wk_uniq into outfile '/tmp/wk_bu_uniq.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2015-03-02' and datein < '2015-03-09' and plan <> 'MYVOLUME' group by brand;
 select brand, count(distinct phone) se_uniq into outfile '/tmp/se_bu_uniq.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2015-02-22' and datein < '2015-03-09' and plan <> 'MYVOLUME' group by brand;
 select brand, count(distinct phone) mo_uniq into outfile '/tmp/mo_bu_uniq.csv' fields terminated by ',' lines terminated by '\n' from powerapp_log where datein >= '2015-02-09' and datein < '2015-03-09' and plan <> 'MYVOLUME' group by brand;
+
+select concat('0',substring(a.phone,3)) into outfile '/tmp/chikka_apn_prepaid_mins_09.csv' fields terminated by ',' lines terminated by '\n' 
+from powerapp_users_apn a, tmp_chikka_apn b 
+where a.phone = b.phone 
+and a.brand = 'BUDDY';
+
+select a.phone into outfile '/tmp/chikka_apn_prepaid_mins_63.csv' fields terminated by ',' lines terminated by '\n' 
+from powerapp_users_apn a, tmp_chikka_apn b 
+where a.phone = b.phone 
+and a.brand = 'BUDDY';
