@@ -708,6 +708,21 @@ begin
    and    carrier is not null 
    group  by tx_date, carrier;
 
+   insert into ctmv6_stats_dtl (tran_dt, carrier, type, others, total) 
+   select tx_date, 'INTL', 'active_carrier', sum(total), sum(total) from (
+   select tx_date, count(1) total
+   from   ctmv6_active_mins a
+   where  tx_date = p_trandate
+   and    carrier is null
+   and    country is not null
+   union all
+   select tx_date, count(1) total
+   from   ctmv6_active_mins a
+   where  tx_date = p_trandate
+   and    carrier is null
+   and    brand is null
+   and    country is null ) t1;
+
    insert into ctmv6_stats_dtl (tran_dt, carrier, type, post, pre, tm_tnt, tat_bro, total) 
    select tx_date, country, 'active_country', 0 post, 0 pre, 0 tnt, 0 bro, count(1) total
    from   ctmv6_active_mins a

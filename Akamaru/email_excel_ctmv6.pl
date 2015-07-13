@@ -95,7 +95,7 @@ $worksheet[0]->merge_range('BP2:BW2', 'REGISTRATION', $format2);
 $worksheet[0]->merge_range('BY2:CC2', 'MIGRATION',    $format2);
 $worksheet[0]->merge_range('CE2:CH2', 'LOGIN',        $format2);
 $worksheet[0]->merge_range('CJ2:CM2', 'USSD',         $format2);
-$worksheet[0]->merge_range('CO2:CT2', 'ACTIVE MINS',         $format2);
+$worksheet[0]->merge_range('CO2:CU2', 'ACTIVE MINS',  $format2);
 
 $worksheet[0]->merge_range('B3:E3',    'HITS',                               $format3);
 $worksheet[0]->merge_range('F3:I3',    'Unique Charged',                     $format3);
@@ -123,7 +123,7 @@ $worksheet[0]->merge_range('BY3:CC3', ' ',                 $format3);
 $worksheet[0]->merge_range('CE3:CH3', 'Sign-in via',       $format3);
 $worksheet[0]->merge_range('CJ3:CK3', '*555',              $format3);
 $worksheet[0]->merge_range('CL3:CM3', '*118',              $format3);
-$worksheet[0]->merge_range('CO3:CT3', ' ',                 $format3);
+$worksheet[0]->merge_range('CO3:CU3', ' ',                 $format3);
 
 $worksheet[0]->set_column(0,0,10);
 $worksheet[0]->set_column(1,12,8);
@@ -247,10 +247,11 @@ $worksheet[0]->write($row+$i, $col+90, 'USSD',       $format);
 
 $worksheet[0]->write($row+$i, $col+92, 'Smart',       $format);
 $worksheet[0]->write($row+$i, $col+93, 'Globe',       $format);
-$worksheet[0]->write($row+$i, $col+94, 'Sun',       $format);
-$worksheet[0]->write($row+$i, $col+95, 'SOCNET',       $format);
-$worksheet[0]->write($row+$i, $col+96, 'PC',       $format);
-$worksheet[0]->write($row+$i, $col+97, 'TOTAL',       $format);
+$worksheet[0]->write($row+$i, $col+94, 'Sun',         $format);
+$worksheet[0]->write($row+$i, $col+95, 'SOCNET',      $format);
+$worksheet[0]->write($row+$i, $col+96, 'PC',          $format);
+$worksheet[0]->write($row+$i, $col+97, 'INTL',        $format);
+$worksheet[0]->write($row+$i, $col+98, 'TOTAL',       $format);
 
 
 #$row = 2;
@@ -416,7 +417,8 @@ select max(if((carrier = 'SMART'),`total`,0)) AS `smart`,
        max(if((carrier = 'SUN'),`total`,0)) AS `sun`,
        max(if((carrier = 'SOCNET'),`total`,0)) AS `socnet`,
        max(if((carrier = 'PC'),`total`,0)) AS `pc`,
-       max(if((carrier = 'SMART'),`total`,0))+max(if((carrier = 'GLOBE'),`total`,0))+max(if((carrier = 'SUN'),`total`,0))+max(if((carrier = 'SOCNET'),`total`,0))+max(if((carrier = 'PC'),`total`,0)) as total
+       max(if((carrier = 'INTL'),`total`,0)) AS `intl`,
+       sum(total) as total
 from ctmv6_stats_dtl
 where left(tran_dt,7) >= '".$current_date."' and
        type='active_carrier' group by tran_dt
@@ -432,6 +434,7 @@ while (@rowRst = $sth_ctm_v6->fetchrow()) {
    $worksheet[0]->write($row+$i, $col+95, $rowRst[3],  $formatNumber);
    $worksheet[0]->write($row+$i, $col+96, $rowRst[4],  $formatNumber);
    $worksheet[0]->write($row+$i, $col+97, $rowRst[5],  $formatNumber);
+   $worksheet[0]->write($row+$i, $col+98, $rowRst[6],  $formatNumber);
    }
 
 
