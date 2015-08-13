@@ -36,13 +36,13 @@ select tran_dt, num_actv_30d sun from powerapp_sun.powerapp_dailyrep where tran_
 
 # TOTAL AVAILMENTS & REVENUE (dbreplica.archive_powerapp_flu)
 
-   insert into powerapp_brand_dailyrep select * from powerapp_flu.powerapp_brand_dailyrep where tran_dt>= '2015-06-25' and tran_dt < curdate();
+   insert into powerapp_brand_dailyrep select * from powerapp_flu.powerapp_brand_dailyrep where tran_dt>= '2015-07-03' and tran_dt < curdate();
 
    insert into powerapp_sun_brand_dailyrep
    select tran_dt, plan, sum(hits_pre), sum(hits_ppd), sum(hits_tnt), sum(hits_tot), sum(uniq_pre), sum(uniq_ppd), sum(uniq_tnt), sum(uniq_tot) from (
-   select left(datein, 10) tran_dt, plan, count(1) hits_pre, 0 hits_ppd, 0 hits_tnt, 0 hits_tot, count(distinct phone) uniq_pre, 0 uniq_ppd, 0 uniq_tnt, 0 uniq_tot from powerapp_sun.powerapp_log where free='false' and brand='PREPAID'  and datein >= '2015-06-01' and datein < curdate() group by tran_dt, plan union
-   select left(datein, 10) tran_dt, plan, 0 hits_pre, count(1) hits_ppd, 0 hits_tnt, 0 hits_tot, 0 uniq_pre, count(distinct phone) uniq_ppd, 0 uniq_tnt, 0 uniq_tot from powerapp_sun.powerapp_log where free='false' and brand='POSTPAID' and datein >= '2015-06-01' and datein < curdate() group by tran_dt, plan union
-   select left(datein, 10) tran_dt, plan, 0 hits_pre, 0 hits_ppd, 0 hits_tnt, count(1) hits_tot, 0 uniq_pre, 0 uniq_ppd, 0 uniq_tnt, count(distinct phone) uniq_tot from powerapp_sun.powerapp_log where free='false' and datein >= '2015-06-01' and datein < curdate() group by tran_dt, plan
+   select left(datein, 10) tran_dt, plan, count(1) hits_pre, 0 hits_ppd, 0 hits_tnt, 0 hits_tot, count(distinct phone) uniq_pre, 0 uniq_ppd, 0 uniq_tnt, 0 uniq_tot from powerapp_sun.powerapp_log where free='false' and brand='PREPAID'  and datein >= '2015-07-03' and datein < curdate() group by tran_dt, plan union
+   select left(datein, 10) tran_dt, plan, 0 hits_pre, count(1) hits_ppd, 0 hits_tnt, 0 hits_tot, 0 uniq_pre, count(distinct phone) uniq_ppd, 0 uniq_tnt, 0 uniq_tot from powerapp_sun.powerapp_log where free='false' and brand='POSTPAID' and datein >= '2015-07-03' and datein < curdate() group by tran_dt, plan union
+   select left(datein, 10) tran_dt, plan, 0 hits_pre, 0 hits_ppd, 0 hits_tnt, count(1) hits_tot, 0 uniq_pre, 0 uniq_ppd, 0 uniq_tnt, count(distinct phone) uniq_tot from powerapp_sun.powerapp_log where free='false' and datein >= '2015-07-03' and datein < curdate() group by tran_dt, plan
    ) temp_table group by tran_dt, plan;
 
 
