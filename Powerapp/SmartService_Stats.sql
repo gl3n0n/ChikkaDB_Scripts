@@ -66,6 +66,7 @@ begin
            sum(if(free='false',1,0)) no_buys, count(distinct(if(free='false',phone,''))) uniq_buys 
     from   spa_put_log
     where  datein >= @tran_dt and datein < @tran_nw 
+    and    http_response = '200' and err_code is null
     group by 1,2,3;
 
     insert into stats_smartservice_daily_per_plan (tx_date, plan, hits, uniq, no_buys, no_uniq_buys)
@@ -73,6 +74,7 @@ begin
            sum(if(free='false',1,0)) no_buys, count(distinct(if(free='false',phone,''))) uniq_buys 
     from   spa_put_log
     where  datein >= @tran_dt and datein < @tran_nw 
+    and    http_response = '200' and err_code is null
     group by 1,2;
 
     insert into stats_smartservice_daily (tx_date, hits, uniq, no_buys, no_uniq_buys)
@@ -80,6 +82,7 @@ begin
            sum(if(free='false',1,0)) no_buys, count(distinct(if(free='false',phone,''))) uniq_buys 
     from   spa_put_log
     where  datein >= @tran_dt and datein < @tran_nw 
+    and    http_response = '200' and err_code is null
     group by 1;
 
     -- Monthly unique MINS
@@ -87,18 +90,21 @@ begin
        select count(distinct phone)
        into  @mo_uniq_actv
        from  spa_put_log
-       where left(datein,7) = left(@tran_dt, 7);
+       where left(datein,7) = left(@tran_dt, 7)
+       and    http_response = '200' and err_code is null;
 
        select count(distinct phone)
        into  @mo_uniq_buys
        from  spa_put_log
        where left(datein,7) = left(@tran_dt, 7)
+       and    http_response = '200' and err_code is null
        and   free='false';
     else
        select count(distinct phone)
        into  @mo_uniq_actv
        from  spa_put_log
        where datein >= date_sub(@tran_dt, interval 30 day)
+       and    http_response = '200' and err_code is null
        and   datein < @tran_nw;
 
        select count(distinct phone)
@@ -106,6 +112,7 @@ begin
        from  spa_put_log
        where datein >= date_sub(@tran_dt, interval 30 day)
        and   datein < @tran_nw
+       and    http_response = '200' and err_code is null
        and   free='false';
     end if;
 
@@ -113,9 +120,9 @@ begin
     select count(distinct phone) into @no_actv_mins from spa_put_log where datein >= @tran_2d and datein < @tran_nw and free='false';
 
     -- Buys per source
-    select count(1) into @no_buys_via_app from spa_put_log where datein >= @tran_dt and datein < @tran_nw and free='false' and source='app';
-    select count(1) into @no_buys_via_web from spa_put_log where datein >= @tran_dt and datein < @tran_nw and free='false' and source='web';
-    select count(1) into @no_buys_via_sms from spa_put_log where datein >= @tran_dt and datein < @tran_nw and free='false' and source='sms';
+    select count(1) into @no_buys_via_app from spa_put_log where datein >= @tran_dt and datein < @tran_nw and free='false' and source='app' and http_response = '200' and err_code is null;
+    select count(1) into @no_buys_via_web from spa_put_log where datein >= @tran_dt and datein < @tran_nw and free='false' and source='web' and http_response = '200' and err_code is null;
+    select count(1) into @no_buys_via_sms from spa_put_log where datein >= @tran_dt and datein < @tran_nw and free='false' and source='sms' and http_response = '200' and err_code is null;
 
     -- Errors
     select count(1), count(distinct phone) into @insuff_bal_cnt, @insuff_bal_uniq from spa_put_log where datein >= @tran_dt and datein < @tran_nw and http_response='402';
