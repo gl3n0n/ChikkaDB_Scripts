@@ -106,7 +106,7 @@ begin
 
    insert into powerapp_last_week_users 
    select phone from (
-   select phone from powerapp_flu.powerapp_log
+   select phone from powerapp_log
    where  datein >= date_sub(p_trandate, interval 7 day) 
    and    datein <  p_trandate
    group  by phone 
@@ -118,11 +118,11 @@ begin
    where datein >= date_sub(p_trandate, interval 6 day) 
    and   datein < date_add(p_trandate, interval 1 day)
    group by left(datein,10), phone
-   union
-   select left(datein,10) datein, phone from powerapp_flu.powerapp_log 
-   where datein >= date_sub(p_trandate, interval 6 day) 
-   and   datein < date_add(p_trandate, interval 1 day)
-   group by left(datein,10), phone
+   -- union
+   -- select left(datein,10) datein, phone from powerapp_flu.powerapp_log 
+   -- where datein >= date_sub(p_trandate, interval 6 day) 
+   -- and   datein < date_add(p_trandate, interval 1 day)
+   -- group by left(datein,10), phone
    ) t1 group by phone;
 
    insert into powerapp_week_new_users 
@@ -197,28 +197,44 @@ begin
    delete from powerapp_retention_stats where tran_dt = p_trandate;
    insert into powerapp_retention_stats ( tran_dt, w7_days, w6_days, w5_days, w4_days, w3_days, w2_days, w1_days, old_users, wk_new_users, new_users, wk_start )
    values (p_trandate, @Day_7, @Day_6, @Day_5, @Day_4, @Day_3, @Day_2, @Day_1, @NewOldUsers, @WkNewUsers, @NewUsers, date_sub(p_trandate, interval 6 day) );
-   
+   select * from powerapp_retention_stats where tran_dt = p_trandate;
 end;
 //
 delimiter ;
 
 
-select * from powerapp_retention_stats order by tran_dt desc;
-call sp_generate_retention_stats('2015-09-01');
-call sp_generate_retention_stats('2015-09-02');
-call sp_generate_retention_stats('2015-09-03');
-call sp_generate_retention_stats('2015-09-04');
-call sp_generate_retention_stats('2015-09-05');
-call sp_generate_retention_stats('2015-09-06');
-call sp_generate_retention_stats('2015-09-07');
-call sp_generate_retention_stats('2015-09-08');
-call sp_generate_retention_stats('2015-09-09');
-call sp_generate_retention_stats('2015-09-10');
-call sp_generate_retention_stats('2015-09-11');
-call sp_generate_retention_stats('2015-09-12');
-call sp_generate_retention_stats('2015-09-13');
-call sp_generate_retention_stats('2015-09-14');
-call sp_generate_retention_stats('2015-09-15');
+select * from powerapp_retention_stats where tran_dt >= '2015-08-01' and tran_dt < '2015-09-01' order by tran_dt desc;
+call sp_generate_retention_stats('2015-07-01');
+call sp_generate_retention_stats('2015-07-02');
+call sp_generate_retention_stats('2015-07-03');
+call sp_generate_retention_stats('2015-07-04');
+call sp_generate_retention_stats('2015-07-05');
+call sp_generate_retention_stats('2015-07-06');
+call sp_generate_retention_stats('2015-07-07');
+call sp_generate_retention_stats('2015-07-08');
+call sp_generate_retention_stats('2015-07-09');
+call sp_generate_retention_stats('2015-07-10');
+call sp_generate_retention_stats('2015-07-11');
+call sp_generate_retention_stats('2015-07-12');
+call sp_generate_retention_stats('2015-07-13');
+call sp_generate_retention_stats('2015-07-14');
+call sp_generate_retention_stats('2015-07-15');
+call sp_generate_retention_stats('2015-07-16');
+call sp_generate_retention_stats('2015-07-17');
+call sp_generate_retention_stats('2015-07-18');
+call sp_generate_retention_stats('2015-07-19');
+call sp_generate_retention_stats('2015-07-20');
+call sp_generate_retention_stats('2015-07-21');
+call sp_generate_retention_stats('2015-07-22');
+call sp_generate_retention_stats('2015-07-23');
+call sp_generate_retention_stats('2015-07-24');
+call sp_generate_retention_stats('2015-07-25');
+call sp_generate_retention_stats('2015-07-26');
+call sp_generate_retention_stats('2015-07-27');
+call sp_generate_retention_stats('2015-07-28');
+call sp_generate_retention_stats('2015-07-29');
+call sp_generate_retention_stats('2015-07-30');
+call sp_generate_retention_stats('2015-07-31');
 
 
 create table powerapp_15day_retention_stats (
@@ -250,33 +266,33 @@ delimiter //
 
 CREATE PROCEDURE sp_generate_15day_retention_stats(p_trandate varchar(10))
 begin
-   create temporary table if not exists powerapp_last_week_users ( phone varchar(12) not null, primary key (phone) );
-   create temporary table if not exists powerapp_this_week_users ( phone varchar(12) not null, no_day int default 0 not null,  primary key (phone) );
-   create temporary table if not exists powerapp_week_new_users  ( phone varchar(12) not null, primary key (phone) );
-   truncate table powerapp_last_week_users;
-   truncate table powerapp_this_week_users;
-   truncate table powerapp_week_new_users;
+   create temporary table if not exists powerapp_15day_last_week_users ( phone varchar(12) not null, primary key (phone) );
+   create temporary table if not exists powerapp_15day_this_week_users ( phone varchar(12) not null, no_day int default 0 not null,  primary key (phone) );
+   create temporary table if not exists powerapp_15day_week_new_users  ( phone varchar(12) not null, primary key (phone) );
+   truncate table powerapp_15day_last_week_users;
+   truncate table powerapp_15day_this_week_users;
+   truncate table powerapp_15day_week_new_users;
 
-   insert into powerapp_last_week_users
+   insert into powerapp_15day_last_week_users
    select phone from (
-   select phone from powerapp_flu.powerapp_log
+   select phone from powerapp_log
    where  datein >= date_sub(p_trandate, interval 15 day)
    and    datein <  p_trandate
    group by phone
    ) t group by phone;
 
-   insert into powerapp_this_week_users(phone, no_day)
+   insert into powerapp_15day_this_week_users(phone, no_day)
    select phone, count(1) no_day from (
    select left(datein,10) datein, phone from powerapp_log
    where datein >= date_sub(p_trandate, interval 14 day) and datein < date_add(p_trandate, interval 1 day)
    group by left(datein,10), phone
-   union
-   select left(datein,10) datein, phone from powerapp_flu.powerapp_log
-   where datein >= date_sub(p_trandate, interval 14 day) and datein < date_add(p_trandate, interval 1 day)
-   group by left(datein,10), phone
+   -- union
+   -- select left(datein,10) datein, phone from powerapp_flu.powerapp_log
+   -- where datein >= date_sub(p_trandate, interval 14 day) and datein < date_add(p_trandate, interval 1 day)
+   -- group by left(datein,10), phone
    ) t1 group by phone;
 
-   insert into powerapp_week_new_users 
+   insert into powerapp_15day_week_new_users 
    select phone 
    from   powerapp_flu.new_subscribers
    where  datein >= date_sub(p_trandate, interval 14 day)
@@ -286,7 +302,7 @@ begin
       declare vNoDay, vHits int default 0;
       declare done_p int default 0;
       declare c_pat cursor for
-         select no_day, count(distinct phone) hits from powerapp_this_week_users
+         select no_day, count(distinct phone) hits from powerapp_15day_this_week_users
          group by no_day order by no_day;
    
       declare continue handler for sqlstate '02000' set done_p = 1;
@@ -336,27 +352,27 @@ begin
    -- New MINs
    select count(1)
    into   @NewOldUsers
-   from   powerapp_this_week_users a
-   where  exists (select 1 from powerapp_last_week_users b 
+   from   powerapp_15day_this_week_users a
+   where  exists (select 1 from powerapp_15day_last_week_users b 
                   where a.phone = b.phone)
-   and    not exists (select 1 from powerapp_week_new_users c
+   and    not exists (select 1 from powerapp_15day_week_new_users c
                       where a.phone = c.phone);
 
    -- New MINs for the week
    select count(1) - @NewOldUsers
    into   @WkNewUsers
-   from   powerapp_this_week_users a
-   where  not exists (select 1 from powerapp_week_new_users c
+   from   powerapp_15day_this_week_users a
+   where  not exists (select 1 from powerapp_15day_week_new_users c
                       where a.phone = c.phone);
 
    -- New MINs Ever for this period
    select count(1)
    into   @NewUsers 
-   from   powerapp_week_new_users;
+   from   powerapp_15day_week_new_users;
 
-   drop temporary table if exists powerapp_last_week_users;
-   drop temporary table if exists powerapp_this_week_users;
-   drop temporary table if exists powerapp_week_new_users;
+   drop temporary table if exists powerapp_15day_last_week_users;
+   drop temporary table if exists powerapp_15day_this_week_users;
+   drop temporary table if exists powerapp_15day_week_new_users;
 
    delete from powerapp_15day_retention_stats where tran_dt = p_trandate;
    insert into powerapp_15day_retention_stats ( tran_dt, w01_days, w02_days, w03_days, w04_days, w05_days, w06_days, w07_days, w08_days,
@@ -367,6 +383,7 @@ begin
                        (@Day_01+@Day_02+@Day_03+@Day_04+@Day_05+@Day_06+@Day_07+@Day_08+@Day_09+@Day_10+@Day_11+@Day_12+@Day_13+@Day_14+@Day_15),
                        @WkNewUsers, @NewUsers );
 
+   select * from powerapp_15day_retention_stats where tran_dt = p_trandate;
 end;
 //
 delimiter ;
@@ -398,14 +415,14 @@ delimiter //
 
 CREATE PROCEDURE sp_generate_retention_stats_monthly(p_trandate varchar(10))
 begin
-   create temporary table if not exists powerapp_last_week_users ( phone varchar(12) not null, primary key (phone) );
-   create temporary table if not exists powerapp_this_week_users ( phone varchar(12) not null, no_day int default 0 not null,  primary key (phone) );
-   create temporary table if not exists powerapp_week_new_users  ( phone varchar(12) not null, primary key (phone) );
-   truncate table powerapp_last_week_users;
-   truncate table powerapp_this_week_users;
-   truncate table powerapp_week_new_users;
+   create temporary table if not exists powerapp_mo_last_week_users ( phone varchar(12) not null, primary key (phone) );
+   create temporary table if not exists powerapp_mo_this_week_users ( phone varchar(12) not null, no_day int default 0 not null,  primary key (phone) );
+   create temporary table if not exists powerapp_mo_week_new_users  ( phone varchar(12) not null, primary key (phone) );
+   truncate table powerapp_mo_last_week_users;
+   truncate table powerapp_mo_this_week_users;
+   truncate table powerapp_mo_week_new_users;
 
-   insert into powerapp_last_week_users
+   insert into powerapp_mo_last_week_users
    select phone from (
    select phone from powerapp_log
    where  datein >= date_sub(p_trandate, interval 29 day)
@@ -413,14 +430,14 @@ begin
    group by phone
    ) t group by phone;
 
-   insert into powerapp_this_week_users (phone, no_day)
+   insert into powerapp_mo_this_week_users (phone, no_day)
    select phone, count(1) no_day from (
    select left(datein,10) datein, phone from powerapp_log
    where datein >= date_sub(p_trandate, interval 29 day) and datein < date_add(p_trandate, interval 1 day)
    group by left(datein,10), phone
    ) t1 group by phone;
 
-   insert into powerapp_week_new_users 
+   insert into powerapp_mo_week_new_users 
    select phone 
    from   powerapp_flu.new_subscribers
    where  datein >= date_sub(p_trandate, interval 29 day)
@@ -430,7 +447,7 @@ begin
       declare vNoDay, vHits int default 0;
       declare done_p int default 0;
       declare c_pat cursor for
-         select no_day, count(distinct phone) hits from powerapp_this_week_users
+         select no_day, count(distinct phone) hits from powerapp_mo_this_week_users
          group by no_day order by no_day;
    
       declare continue handler for sqlstate '02000' set done_p = 1;
@@ -511,27 +528,27 @@ begin
    
    select count(1)
    into   @NewOldUsers
-   from   powerapp_this_week_users a
-   where  exists (select 1 from powerapp_last_week_users b 
+   from   powerapp_mo_this_week_users a
+   where  exists (select 1 from powerapp_mo_last_week_users b 
                   where a.phone = b.phone)
-   and    not exists (select 1 from powerapp_week_new_users c 
+   and    not exists (select 1 from powerapp_mo_week_new_users c 
                       where a.phone = c.phone);
 
    -- New MINs
    select count(1) - @NewOldUsers 
    into   @WkNewUsers 
-   from   powerapp_this_week_users a
-   where  not exists (select 1 from powerapp_week_new_users b 
+   from   powerapp_mo_this_week_users a
+   where  not exists (select 1 from powerapp_mo_week_new_users b 
                       where a.phone = b.phone);
 
    -- New MINs ever for the period
    select count(1)
    into   @NewUsers 
-   from   powerapp_week_new_users;
+   from   powerapp_mo_week_new_users;
 
-   drop temporary table if exists powerapp_last_week_users;
-   drop temporary table if exists powerapp_this_week_users;
-   drop temporary table if exists powerapp_week_new_users;
+   drop temporary table if exists powerapp_mo_last_week_users;
+   drop temporary table if exists powerapp_mo_this_week_users;
+   drop temporary table if exists powerapp_mo_week_new_users;
 
    delete from powerapp_retention_stats_monthly where tran_dt = p_trandate;
    insert into powerapp_retention_stats_monthly 
@@ -545,7 +562,12 @@ begin
            @Day_19, @Day_18, @Day_17, @Day_16, @Day_15, @Day_14, @Day_13, @Day_12, @Day_11, @Day_10,
            @Day_9, @Day_8, @Day_7, @Day_6, @Day_5, @Day_4, @Day_3, @Day_2, @Day_1,
            @NewOldUsers, @WkNewUsers, @NewUsers, date_sub(p_trandate, interval 29 day));
-
+   select tran_dt, @Day_31 + @Day_30 +
+           @Day_29 + @Day_28 + @Day_27 + @Day_26 + @Day_25 + @Day_24 + @Day_23 + @Day_22 + @Day_21 + @Day_20 +
+           @Day_19 + @Day_18 + @Day_17 + @Day_16 + @Day_15 + @Day_14 + @Day_13 + @Day_12 + @Day_11 + @Day_10 +
+           @Day_9 + @Day_8 + @Day_7 + @Day_6 + @Day_5 + @Day_4 + @Day_3 + @Day_2 + @Day_1 Total_Mins,
+           new_old + wk_new_users + new_users Total_Mins_S, new_old, wk_new_users, new_users 
+   from powerapp_retention_stats_monthly where tran_dt = p_trandate;
 end;
 //
 delimiter ;
