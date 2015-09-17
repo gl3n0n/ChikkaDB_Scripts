@@ -147,8 +147,8 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
    $worksheet->write($row+$i, $col+ 7,  $rowRst[7],  $format1p);
    $worksheet->write($row+$i, $col+ 9,  $rowRst[8],  $format1);
    $worksheet->write($row+$i, $col+10,  $rowRst[9],  $format1);
-   $worksheet->write($row+$i, $col+11,  $rowRst[10],  $format1);
-   $worksheet->write($row+$i, $col+12,  $rowRst[11],  $format1p);
+   $worksheet->write($row+$i, $col+11,  $rowRst[10], $format1);
+   $worksheet->write($row+$i, $col+12,  $rowRst[11], $format1p);
    $worksheet->write($row+$i, $col+13,  $rowRst[12], $format1p);
    $worksheet->write($row+$i, $col+15,  $rowRst[13], $format1);
    $worksheet->write($row+$i, $col+16,  $rowRst[14], $format1);
@@ -172,16 +172,17 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
 ###################################################
 # 2nd Worksheet
 ###################################################
-$strSQLhi10 = "select DATE_FORMAT(tran_dt,'%m/%d/%Y'), w7_days, w6_days, w5_days, w4_days, w3_days, w2_days, w1_days, 
-                      old_users, new_users, wk_start,
-                      round((w7_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w7_pct,
-                      round((w6_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w6_pct,
-                      round((w5_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w5_pct,
-                      round((w4_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w4_pct,
-                      round((w3_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w3_pct,
-                      round((w2_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w2_pct,
+$strSQLhi10 = "select DATE_FORMAT(tran_dt,'%m/%d/%Y'), w1_days, w2_days, w3_days, w4_days, w5_days, w6_days, w7_days, 
+                      old_users, wk_new_users, new_users, wk_start,
                       round((w1_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w1_pct,
+                      round((w2_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w2_pct,
+                      round((w3_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w3_pct,
+                      round((w4_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w4_pct,
+                      round((w5_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w5_pct,
+                      round((w6_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w6_pct,
+                      round((w7_days/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) w7_pct,
                       round((old_users/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) newold_pct,
+                      round((wk_new_users/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) wknewuser_pct ,
                       round((new_users/(w7_days+w6_days+w5_days+w4_days+w3_days+w2_days+w1_days))*100,2) newuser_pct 
                from powerapp_retention_stats 
                where left(tran_dt,7) = '".$current_date."' order by tran_dt";
@@ -235,38 +236,40 @@ $format2->set_border(2);
 $row = 1;
 $col = 0;
 $i=1;
-$worksheet->merge_range('B2:K2', 'WEEKLY Retention Stats', $format2);
-$worksheet->merge_range('M2:U2', 'WEEKLY Retention Percentage', $format2);
+$worksheet->merge_range('B2:L2', 'WEEKLY Retention Stats', $format2);
+$worksheet->merge_range('N2:W2', 'WEEKLY Retention Percentage', $format2);
 
 $worksheet->set_column(0,0,9);
 $worksheet->set_column(1,7,7);
 $worksheet->set_column(8,8,8);
-$worksheet->set_column(9,10,9);
-$worksheet->set_column(11,11,1);
-$worksheet->set_column(12,18,7);
-$worksheet->set_column(19,20,11);
+$worksheet->set_column(9,11,9);
+$worksheet->set_column(12,12,1);
+$worksheet->set_column(13,19,7);
+$worksheet->set_column(20,22,11);
 #
 
-$worksheet->write($row+$i, $col,    'DATE',          $format);
-$worksheet->write($row+$i, $col+1,  'Day 7',         $format);
-$worksheet->write($row+$i, $col+2,  'Day 6',         $format);
-$worksheet->write($row+$i, $col+3,  'Day 5',         $format);
-$worksheet->write($row+$i, $col+4,  'Day 4',         $format);
-$worksheet->write($row+$i, $col+5,  'Day 3',         $format);
-$worksheet->write($row+$i, $col+6,  'Day 2',         $format);
-$worksheet->write($row+$i, $col+7,  'Day 1',         $format);
-$worksheet->write($row+$i, $col+8,  'New OLD',       $format);
-$worksheet->write($row+$i, $col+9,  'New MINs',      $format);
-$worksheet->write($row+$i, $col+10,  'START Date',   $format);
-$worksheet->write($row+$i, $col+12,  'D7 (%)',       $format);
-$worksheet->write($row+$i, $col+13,  'D6 (%)',       $format);
-$worksheet->write($row+$i, $col+14,  'D5 (%)',       $format);
-$worksheet->write($row+$i, $col+15,  'D4 (%)',       $format);
-$worksheet->write($row+$i, $col+16,  'D3 (%)',       $format);
-$worksheet->write($row+$i, $col+17,  'D2 (%)',       $format);
-$worksheet->write($row+$i, $col+18,  'D1 (%)',       $format);
-$worksheet->write($row+$i, $col+19,  'New OLD (%)',  $format);
-$worksheet->write($row+$i, $col+20,  'New MINs (%)', $format);
+$worksheet->write($row+$i, $col,    'DATE',         $format);
+$worksheet->write($row+$i, $col+1,  '1x',           $format);
+$worksheet->write($row+$i, $col+2,  '2x',           $format);
+$worksheet->write($row+$i, $col+3,  '3x',           $format);
+$worksheet->write($row+$i, $col+4,  '4x',           $format);
+$worksheet->write($row+$i, $col+5,  '5x',           $format);
+$worksheet->write($row+$i, $col+6,  '6x',           $format);
+$worksheet->write($row+$i, $col+7,  '7x',           $format);
+$worksheet->write($row+$i, $col+8,  'Repeater',     $format);
+$worksheet->write($row+$i, $col+9,  'New OLD',      $format);
+$worksheet->write($row+$i, $col+10, 'New MINs',     $format);
+$worksheet->write($row+$i, $col+11, 'START Date',   $format);
+$worksheet->write($row+$i, $col+13, '1x (%)',       $format);
+$worksheet->write($row+$i, $col+14, '2x (%)',       $format);
+$worksheet->write($row+$i, $col+15, '3x (%)',       $format);
+$worksheet->write($row+$i, $col+16, '4x (%)',       $format);
+$worksheet->write($row+$i, $col+17, '5x (%)',       $format);
+$worksheet->write($row+$i, $col+18, '6x (%)',       $format);
+$worksheet->write($row+$i, $col+19, '7x (%)',       $format);
+$worksheet->write($row+$i, $col+20, 'Repeater (%)', $format);
+$worksheet->write($row+$i, $col+21, 'New OLD (%)',  $format);
+$worksheet->write($row+$i, $col+22, 'New MINs (%)', $format);
 
 while (@rowRst = $sth_hi_10->fetchrow()) {
 
@@ -281,8 +284,8 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
    $worksheet->write($row+$i, $col+7,   $rowRst[7],  $format1);
    $worksheet->write($row+$i, $col+8,   $rowRst[8],  $format1);
    $worksheet->write($row+$i, $col+9,   $rowRst[9],  $format1);
-   $worksheet->write($row+$i, $col+10,  $rowRst[10], $format1s);
-   $worksheet->write($row+$i, $col+12,  $rowRst[11], $format1d);
+   $worksheet->write($row+$i, $col+10,  $rowRst[10], $format1);
+   $worksheet->write($row+$i, $col+11,  $rowRst[11], $format1s);
    $worksheet->write($row+$i, $col+13,  $rowRst[12], $format1d);
    $worksheet->write($row+$i, $col+14,  $rowRst[13], $format1d);
    $worksheet->write($row+$i, $col+15,  $rowRst[14], $format1d);
@@ -291,30 +294,34 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
    $worksheet->write($row+$i, $col+18,  $rowRst[17], $format1d);
    $worksheet->write($row+$i, $col+19,  $rowRst[18], $format1d);
    $worksheet->write($row+$i, $col+20,  $rowRst[19], $format1d);
+   $worksheet->write($row+$i, $col+21,  $rowRst[20], $format1d);
+   $worksheet->write($row+$i, $col+22,  $rowRst[21], $format1d);
 }
 
 ###################################################
 # 3rd Worksheet
 ###################################################
 $strSQLhi10 = "select DATE_FORMAT(tran_dt,'%m/%d/%Y'), 
-                      w15_days, w14_days, w13_days, w12_days, w11_days, w10_days, w09_days, w08_days, 
-                      w07_days, w06_days, w05_days, w04_days, w03_days, w02_days, w01_days, new_old, new_users, wk_start,
-                      round((w15_days/w_total)*100,2) w15_pct,
-                      round((w14_days/w_total)*100,2) w14_pct,
-                      round((w13_days/w_total)*100,2) w13_pct,
-                      round((w12_days/w_total)*100,2) w12_pct,
-                      round((w11_days/w_total)*100,2) w11_pct,
-                      round((w10_days/w_total)*100,2) w10_pct,
-                      round((w09_days/w_total)*100,2) w09_pct,
-                      round((w08_days/w_total)*100,2) w08_pct,
-                      round((w07_days/w_total)*100,2) w07_pct,
-                      round((w06_days/w_total)*100,2) w06_pct,
-                      round((w05_days/w_total)*100,2) w05_pct,
-                      round((w04_days/w_total)*100,2) w04_pct,
-                      round((w03_days/w_total)*100,2) w03_pct,
-                      round((w02_days/w_total)*100,2) w02_pct,
+                      w01_days, w02_days, w03_days, w04_days, w05_days, w06_days,  w07_days, w08_days, 
+                      w09_days, w10_days, w11_days,w12_days, w13_days, w14_days, w15_days, 
+                      new_old, wk_new_users, new_users, wk_start,
                       round((w01_days/w_total)*100,2) w01_pct,
+                      round((w02_days/w_total)*100,2) w02_pct,
+                      round((w03_days/w_total)*100,2) w03_pct,
+                      round((w04_days/w_total)*100,2) w04_pct,
+                      round((w05_days/w_total)*100,2) w05_pct,
+                      round((w06_days/w_total)*100,2) w06_pct,
+                      round((w07_days/w_total)*100,2) w07_pct,
+                      round((w08_days/w_total)*100,2) w08_pct,
+                      round((w09_days/w_total)*100,2) w09_pct,
+                      round((w10_days/w_total)*100,2) w10_pct,
+                      round((w11_days/w_total)*100,2) w11_pct,
+                      round((w12_days/w_total)*100,2) w12_pct,
+                      round((w13_days/w_total)*100,2) w13_pct,
+                      round((w14_days/w_total)*100,2) w14_pct,
+                      round((w15_days/w_total)*100,2) w15_pct,
                       round((new_old /w_total)*100,2) newold_pct,
+                      round((wk_new_users/w_total)*100,2) wknewuser_pct,
                       round((new_users/w_total)*100,2) newuser_pct 
                from powerapp_15day_retention_stats 
                where left(tran_dt,7) = '".$current_date."' order by tran_dt";
@@ -368,54 +375,56 @@ $format2->set_border(2);
 $row = 1;
 $col = 0;
 $i=1;
-$worksheet->merge_range('B2:S2',  '15Day Retention Stats',      $format2);
-$worksheet->merge_range('U2:AK2', '15Day Retention Percentage', $format2);
+$worksheet->merge_range('B2:T2',  '15Day Retention Stats',      $format2);
+$worksheet->merge_range('V2:AM2', '15Day Retention Percentage', $format2);
 
 $worksheet->set_column(0,0,9);
 $worksheet->set_column(1,15,7);
-$worksheet->set_column(16,17,8);
-$worksheet->set_column(18,18,9);
-$worksheet->set_column(19,19,1);
-$worksheet->set_column(20,34,7);
-$worksheet->set_column(35,36,11);
+$worksheet->set_column(16,18,8);
+$worksheet->set_column(19,19,9);
+$worksheet->set_column(20,20,1);
+$worksheet->set_column(21,35,7);
+$worksheet->set_column(36,38,11);
 #
 
 $worksheet->write($row+$i, $col,     'DATE',         $format);
-$worksheet->write($row+$i, $col+ 1,  'Day 15',       $format);
-$worksheet->write($row+$i, $col+ 2,  'Day 14',       $format);
-$worksheet->write($row+$i, $col+ 3,  'Day 13',       $format);
-$worksheet->write($row+$i, $col+ 4,  'Day 12',       $format);
-$worksheet->write($row+$i, $col+ 5,  'Day 11',       $format);
-$worksheet->write($row+$i, $col+ 6,  'Day 10',       $format);
-$worksheet->write($row+$i, $col+ 7,  'Day 9',        $format);
-$worksheet->write($row+$i, $col+ 8,  'Day 8',        $format);
-$worksheet->write($row+$i, $col+ 9,  'Day 7',        $format);
-$worksheet->write($row+$i, $col+10,  'Day 6',        $format);
-$worksheet->write($row+$i, $col+11,  'Day 5',        $format);
-$worksheet->write($row+$i, $col+12,  'Day 4',        $format);
-$worksheet->write($row+$i, $col+13,  'Day 3',        $format);
-$worksheet->write($row+$i, $col+14,  'Day 2',        $format);
-$worksheet->write($row+$i, $col+15,  'Day 1',        $format);
-$worksheet->write($row+$i, $col+16,  'New OLD',      $format);
-$worksheet->write($row+$i, $col+17,  'New MINs',     $format);
-$worksheet->write($row+$i, $col+18,  'START Date',   $format);
-$worksheet->write($row+$i, $col+20,  'D15 (%)',      $format);
-$worksheet->write($row+$i, $col+21,  'D14 (%)',      $format);
-$worksheet->write($row+$i, $col+22,  'D13 (%)',      $format);
-$worksheet->write($row+$i, $col+23,  'D12 (%)',      $format);
-$worksheet->write($row+$i, $col+24,  'D11 (%)',      $format);
-$worksheet->write($row+$i, $col+25,  'D10 (%)',      $format);
-$worksheet->write($row+$i, $col+26,  'D9 (%)',       $format);
-$worksheet->write($row+$i, $col+27,  'D8 (%)',       $format);
-$worksheet->write($row+$i, $col+28,  'D7 (%)',       $format);
-$worksheet->write($row+$i, $col+29,  'D6 (%)',       $format);
-$worksheet->write($row+$i, $col+30,  'D5 (%)',       $format);
-$worksheet->write($row+$i, $col+31,  'D4 (%)',       $format);
-$worksheet->write($row+$i, $col+32,  'D3 (%)',       $format);
-$worksheet->write($row+$i, $col+33,  'D2 (%)',       $format);
-$worksheet->write($row+$i, $col+34,  'D1 (%)',       $format);
-$worksheet->write($row+$i, $col+35,  'New OLD (%)',  $format);
-$worksheet->write($row+$i, $col+36,  'New MINs (%)', $format);
+$worksheet->write($row+$i, $col+ 1,  '1x' ,          $format);
+$worksheet->write($row+$i, $col+ 2,  '2x' ,          $format);
+$worksheet->write($row+$i, $col+ 3,  '3x' ,          $format);
+$worksheet->write($row+$i, $col+ 4,  '4x' ,          $format);
+$worksheet->write($row+$i, $col+ 5,  '5x' ,          $format);
+$worksheet->write($row+$i, $col+ 6,  '6x' ,          $format);
+$worksheet->write($row+$i, $col+ 7,  '7x' ,          $format);
+$worksheet->write($row+$i, $col+ 8,  '8x' ,          $format);
+$worksheet->write($row+$i, $col+ 9,  '9x' ,          $format);
+$worksheet->write($row+$i, $col+10,  '10x',          $format);
+$worksheet->write($row+$i, $col+11,  '11x',          $format);
+$worksheet->write($row+$i, $col+12,  '12x',          $format);
+$worksheet->write($row+$i, $col+13,  '13x',          $format);
+$worksheet->write($row+$i, $col+14,  '14x',          $format);
+$worksheet->write($row+$i, $col+15,  '15x',          $format);
+$worksheet->write($row+$i, $col+16,  'Repeater',     $format);
+$worksheet->write($row+$i, $col+17,  'New OLD',      $format);
+$worksheet->write($row+$i, $col+18,  'New MINs',     $format);
+$worksheet->write($row+$i, $col+19,  'START Date',   $format);
+$worksheet->write($row+$i, $col+21,  '1x (%)',       $format);
+$worksheet->write($row+$i, $col+22,  '2x (%)',       $format);
+$worksheet->write($row+$i, $col+23,  '3x (%)',       $format);
+$worksheet->write($row+$i, $col+24,  '4x (%)',       $format);
+$worksheet->write($row+$i, $col+25,  '5x (%)',       $format);
+$worksheet->write($row+$i, $col+26,  '6x (%)',       $format);
+$worksheet->write($row+$i, $col+27,  '7x (%)',       $format);
+$worksheet->write($row+$i, $col+28,  '8x (%)',       $format);
+$worksheet->write($row+$i, $col+29,  '9x (%)',       $format);
+$worksheet->write($row+$i, $col+30,  '10x (%)',      $format);
+$worksheet->write($row+$i, $col+31,  '11x (%)',      $format);
+$worksheet->write($row+$i, $col+32,  '12x (%)',      $format);
+$worksheet->write($row+$i, $col+33,  '13x (%)',      $format);
+$worksheet->write($row+$i, $col+34,  '14x (%)',      $format);
+$worksheet->write($row+$i, $col+35,  '15x (%)',      $format);
+$worksheet->write($row+$i, $col+36,  'Repeater (%)', $format);
+$worksheet->write($row+$i, $col+37,  'New OLD (%)',  $format);
+$worksheet->write($row+$i, $col+38,  'New MINs (%)', $format);
 
 while (@rowRst = $sth_hi_10->fetchrow()) {
 
@@ -438,8 +447,8 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
    $worksheet->write($row+$i, $col+15,  $rowRst[15], $format1);
    $worksheet->write($row+$i, $col+16,  $rowRst[16], $format1);
    $worksheet->write($row+$i, $col+17,  $rowRst[17], $format1);
-   $worksheet->write($row+$i, $col+18,  $rowRst[18], $format1s);
-   $worksheet->write($row+$i, $col+20,  $rowRst[19], $format1d);
+   $worksheet->write($row+$i, $col+18,  $rowRst[18], $format1);
+   $worksheet->write($row+$i, $col+19,  $rowRst[19], $format1s);
    $worksheet->write($row+$i, $col+21,  $rowRst[20], $format1d);
    $worksheet->write($row+$i, $col+22,  $rowRst[21], $format1d);
    $worksheet->write($row+$i, $col+23,  $rowRst[22], $format1d);
@@ -456,6 +465,8 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
    $worksheet->write($row+$i, $col+34,  $rowRst[33], $format1d);
    $worksheet->write($row+$i, $col+35,  $rowRst[34], $format1d);
    $worksheet->write($row+$i, $col+36,  $rowRst[35], $format1d);
+   $worksheet->write($row+$i, $col+37,  $rowRst[36], $format1d);
+   $worksheet->write($row+$i, $col+38,  $rowRst[37], $format1d);
 }                                  
                                    
 
@@ -464,10 +475,11 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
 # 4th Worksheet
 ###################################################
 
-$strSQLhi10 = "select DATE_FORMAT(tran_dt,'%m/%d/%Y'), w31_days, w30_days, 
-               w29_days, w28_days, w27_days, w26_days, w25_days, w24_days, w23_days, w22_days, w21_days, w20_days, 
-               w19_days, w18_days, w17_days, w16_days, w15_days, w14_days, w13_days, w12_days, w11_days, w10_days, 
-               w9_days, w8_days, w7_days, w6_days, w5_days, w4_days, w3_days, w2_days, w1_days, new_old, new_users, wk_start 
+$strSQLhi10 = "select DATE_FORMAT(tran_dt,'%m/%d/%Y'), w31_days, 
+               w1_days, w2_days, w3_days, w4_days, w5_days, w6_days,  w7_days, w8_days, w9_days, w10_days,                
+               w11_days,w12_days, w13_days, w14_days, w15_days, w16_days, w17_days, w18_days, w19_days, w20_days, 
+               w21_days, w22_days, w23_days, w24_days, w25_days, w26_days, w27_days, w28_days, w29_days, w30_days, 
+               new_old, wk_new_users, new_users, wk_start 
                from powerapp_retention_stats_monthly 
                where left(tran_dt,7) = '".$current_date."' order by tran_dt";
 $sth_hi_10 = $dbh_hi10->prepare($strSQLhi10);
@@ -512,55 +524,55 @@ $format2->set_border(2);
 $row = 1;
 $col = 0;
 $i=1;
-$worksheet->merge_range('B2:AI2', 'MONTHLY Retention Stats', $format2);
+$worksheet->merge_range('B2:AJ2', 'MONTHLY Retention Stats', $format2);
 
 $worksheet->set_column(0,0,8);
-$worksheet->set_column(1,30,6);
-$worksheet->set_column(31,33,8);
-$worksheet->set_column(34,34,9);
+$worksheet->set_column(1,1,.1);
+$worksheet->set_column(2,31,6);
+$worksheet->set_column(32,34,8);
+$worksheet->set_column(35,35,9);
 #
 
 $worksheet->write($row+$i, $col,     'DATE',       $format);
-$worksheet->write($row+$i, $col+1,   'Day 31',     $format);
-$worksheet->write($row+$i, $col+2,   'Day 30',     $format);
-$worksheet->write($row+$i, $col+3,   'Day 29',     $format);
-$worksheet->write($row+$i, $col+4,   'Day 28',     $format);
-$worksheet->write($row+$i, $col+5,   'Day 27',     $format);
-$worksheet->write($row+$i, $col+6,   'Day 26',     $format);
-$worksheet->write($row+$i, $col+7,   'Day 25',     $format);
-$worksheet->write($row+$i, $col+8,   'Day 24',     $format);
-$worksheet->write($row+$i, $col+9,   'Day 23',     $format);
-$worksheet->write($row+$i, $col+10,  'Day 22',     $format);
-$worksheet->write($row+$i, $col+11,  'Day 21',     $format);
-$worksheet->write($row+$i, $col+12,  'Day 20',     $format);
-$worksheet->write($row+$i, $col+13,  'Day 19',     $format);
-$worksheet->write($row+$i, $col+14,  'Day 18',     $format);
-$worksheet->write($row+$i, $col+15,  'Day 17',     $format);
-$worksheet->write($row+$i, $col+16,  'Day 16',     $format);
-$worksheet->write($row+$i, $col+17,  'Day 15',     $format);
-$worksheet->write($row+$i, $col+18,  'Day 14',     $format);
-$worksheet->write($row+$i, $col+19,  'Day 13',     $format);
-$worksheet->write($row+$i, $col+20,  'Day 12',     $format);
-$worksheet->write($row+$i, $col+21,  'Day 11',     $format);
-$worksheet->write($row+$i, $col+22,  'Day 10',     $format);
-$worksheet->write($row+$i, $col+23,  'Day 9',      $format);
-$worksheet->write($row+$i, $col+24,  'Day 8',      $format);
-$worksheet->write($row+$i, $col+25,  'Day 7',      $format);
-$worksheet->write($row+$i, $col+26,  'Day 6',      $format);
-$worksheet->write($row+$i, $col+27,  'Day 5',      $format);
-$worksheet->write($row+$i, $col+28,  'Day 4',      $format);
-$worksheet->write($row+$i, $col+29,  'Day 3',      $format);
-$worksheet->write($row+$i, $col+30,  'Day 2',      $format);
-$worksheet->write($row+$i, $col+31,  'Day 1',      $format);
-$worksheet->write($row+$i, $col+32,  'New OLD',    $format);
-$worksheet->write($row+$i, $col+33,  'New MINs',   $format);
-$worksheet->write($row+$i, $col+34,  'START Date', $format);
+$worksheet->write($row+$i, $col+2,   '1x' ,        $format);
+$worksheet->write($row+$i, $col+3,   '2x' ,        $format);
+$worksheet->write($row+$i, $col+4,   '3x' ,        $format);
+$worksheet->write($row+$i, $col+5,   '4x' ,        $format);
+$worksheet->write($row+$i, $col+6,   '5x' ,        $format);
+$worksheet->write($row+$i, $col+7,   '6x' ,        $format);
+$worksheet->write($row+$i, $col+8,   '7x' ,        $format);
+$worksheet->write($row+$i, $col+9,   '8x' ,        $format);
+$worksheet->write($row+$i, $col+10,  '9x' ,        $format);
+$worksheet->write($row+$i, $col+11,  '10x',        $format);
+$worksheet->write($row+$i, $col+12,  '11x',        $format);
+$worksheet->write($row+$i, $col+13,  '12x',        $format);
+$worksheet->write($row+$i, $col+14,  '13x',        $format);
+$worksheet->write($row+$i, $col+15,  '14x',        $format);
+$worksheet->write($row+$i, $col+16,  '15x',        $format);
+$worksheet->write($row+$i, $col+17,  '16x',        $format);
+$worksheet->write($row+$i, $col+18,  '17x',        $format);
+$worksheet->write($row+$i, $col+19,  '18x',        $format);
+$worksheet->write($row+$i, $col+20,  '19x',        $format);
+$worksheet->write($row+$i, $col+21,  '20x',        $format);
+$worksheet->write($row+$i, $col+22,  '21x',        $format);
+$worksheet->write($row+$i, $col+23,  '22x',        $format);
+$worksheet->write($row+$i, $col+24,  '23x',        $format);
+$worksheet->write($row+$i, $col+25,  '24x',        $format);
+$worksheet->write($row+$i, $col+26,  '25x',        $format);
+$worksheet->write($row+$i, $col+27,  '26x',        $format);
+$worksheet->write($row+$i, $col+28,  '27x',        $format);
+$worksheet->write($row+$i, $col+29,  '28x',        $format);
+$worksheet->write($row+$i, $col+30,  '29x',        $format);
+$worksheet->write($row+$i, $col+31,  '30x',        $format);
+$worksheet->write($row+$i, $col+32,  'Repeater',   $format);
+$worksheet->write($row+$i, $col+33,  'New OLD',    $format);
+$worksheet->write($row+$i, $col+34,  'New MINs',   $format);
+$worksheet->write($row+$i, $col+35,  'START Date', $format);
 
 while (@rowRst = $sth_hi_10->fetchrow()) {
 
    $i++;
    $worksheet->write($row+$i, $col,    $rowRst[0],  $format1s);
-   $worksheet->write($row+$i, $col+1,  $rowRst[1],  $format1);
    $worksheet->write($row+$i, $col+2,  $rowRst[2],  $format1);
    $worksheet->write($row+$i, $col+3,  $rowRst[3],  $format1);
    $worksheet->write($row+$i, $col+4,  $rowRst[4],  $format1);
@@ -593,7 +605,8 @@ while (@rowRst = $sth_hi_10->fetchrow()) {
    $worksheet->write($row+$i, $col+31, $rowRst[31], $format1);
    $worksheet->write($row+$i, $col+32, $rowRst[32], $format1);
    $worksheet->write($row+$i, $col+33, $rowRst[33], $format1);
-   $worksheet->write($row+$i, $col+34, $rowRst[34], $format1s);
+   $worksheet->write($row+$i, $col+34, $rowRst[34], $format1);
+   $worksheet->write($row+$i, $col+35, $rowRst[35], $format1s);
 }
 
 
@@ -1039,200 +1052,200 @@ $worksheet->set_column(239,239,1);
 $worksheet->write($row+$i, $col,     'DATE',      $format);
 $worksheet->write($row+$i, $col+1,   'New MINs',  $format);
 #UNLIMITED
-$worksheet->write($row+$i, $col+16,  'Day 1',     $format);
-$worksheet->write($row+$i, $col+17,  'Day 2',     $format);
-$worksheet->write($row+$i, $col+18,  'Day 3',     $format);
-$worksheet->write($row+$i, $col+19,  'Day 4',     $format);
-$worksheet->write($row+$i, $col+20,  'Day 5',     $format);
-$worksheet->write($row+$i, $col+21,  'Day 6',     $format);
-$worksheet->write($row+$i, $col+22,  'Day 7',     $format);
-$worksheet->write($row+$i, $col+24,  'D1(%)',     $format);
-$worksheet->write($row+$i, $col+25,  'D2(%)',     $format);
-$worksheet->write($row+$i, $col+26,  'D3(%)',     $format);
-$worksheet->write($row+$i, $col+27,  'D4(%)',     $format);
-$worksheet->write($row+$i, $col+28,  'D5(%)',     $format);
-$worksheet->write($row+$i, $col+29,  'D6(%)',     $format);
-$worksheet->write($row+$i, $col+30,  'D7(%)',     $format);
+$worksheet->write($row+$i, $col+16,  '1x',     $format);
+$worksheet->write($row+$i, $col+17,  '2x',     $format);
+$worksheet->write($row+$i, $col+18,  '3x',     $format);
+$worksheet->write($row+$i, $col+19,  '4x',     $format);
+$worksheet->write($row+$i, $col+20,  '5x',     $format);
+$worksheet->write($row+$i, $col+21,  '6x',     $format);
+$worksheet->write($row+$i, $col+22,  '7x',     $format);
+$worksheet->write($row+$i, $col+24,  '1x(%)',  $format);
+$worksheet->write($row+$i, $col+25,  '2x(%)',  $format);
+$worksheet->write($row+$i, $col+26,  '3x(%)',  $format);
+$worksheet->write($row+$i, $col+27,  '4x(%)',  $format);
+$worksheet->write($row+$i, $col+28,  '5x(%)',  $format);
+$worksheet->write($row+$i, $col+29,  '6x(%)',  $format);
+$worksheet->write($row+$i, $col+30,  '7x(%)',  $format);
 #PISONET
-$worksheet->write($row+$i, $col+32,  'Day 1',      $format);
-$worksheet->write($row+$i, $col+33,  'Day 2',     $format);
-$worksheet->write($row+$i, $col+34,  'Day 3',     $format);
-$worksheet->write($row+$i, $col+35,  'Day 4',     $format);
-$worksheet->write($row+$i, $col+36,  'Day 5',     $format);
-$worksheet->write($row+$i, $col+37,  'Day 6',     $format);
-$worksheet->write($row+$i, $col+38,  'Day 7',     $format);
-$worksheet->write($row+$i, $col+40,  'D1(%)',     $format);
-$worksheet->write($row+$i, $col+41,  'D2(%)',     $format);
-$worksheet->write($row+$i, $col+42,  'D3(%)',     $format);
-$worksheet->write($row+$i, $col+43,  'D4(%)',     $format);
-$worksheet->write($row+$i, $col+44,  'D5(%)',     $format);
-$worksheet->write($row+$i, $col+45,  'D6(%)',     $format);
-$worksheet->write($row+$i, $col+46,  'D7(%)',     $format);
+$worksheet->write($row+$i, $col+32,  '1x',     $format);
+$worksheet->write($row+$i, $col+33,  '2x',     $format);
+$worksheet->write($row+$i, $col+34,  '3x',     $format);
+$worksheet->write($row+$i, $col+35,  '4x',     $format);
+$worksheet->write($row+$i, $col+36,  '5x',     $format);
+$worksheet->write($row+$i, $col+37,  '6x',     $format);
+$worksheet->write($row+$i, $col+38,  '7x',     $format);
+$worksheet->write($row+$i, $col+40,  '1x(%)',  $format);
+$worksheet->write($row+$i, $col+41,  '2x(%)',  $format);
+$worksheet->write($row+$i, $col+42,  '3x(%)',  $format);
+$worksheet->write($row+$i, $col+43,  '4x(%)',  $format);
+$worksheet->write($row+$i, $col+44,  '5x(%)',  $format);
+$worksheet->write($row+$i, $col+45,  '6x(%)',  $format);
+$worksheet->write($row+$i, $col+46,  '7x(%)',  $format);
 #YOUTUBE
-$worksheet->write($row+$i, $col+48,  'Day 1',      $format);
-$worksheet->write($row+$i, $col+49,  'Day 2',     $format);
-$worksheet->write($row+$i, $col+50,  'Day 3',     $format);
-$worksheet->write($row+$i, $col+51,  'Day 4',     $format);
-$worksheet->write($row+$i, $col+52,  'Day 5',     $format);
-$worksheet->write($row+$i, $col+53,  'Day 6',     $format);
-$worksheet->write($row+$i, $col+54,  'Day 7',     $format);
-$worksheet->write($row+$i, $col+56,  'D1(%)',     $format);
-$worksheet->write($row+$i, $col+57,  'D2(%)',     $format);
-$worksheet->write($row+$i, $col+58,  'D3(%)',     $format);
-$worksheet->write($row+$i, $col+59,  'D4(%)',     $format);
-$worksheet->write($row+$i, $col+60,  'D5(%)',     $format);
-$worksheet->write($row+$i, $col+61,  'D6(%)',     $format);
-$worksheet->write($row+$i, $col+62,  'D7(%)',     $format);
+$worksheet->write($row+$i, $col+48,  '1x',     $format);
+$worksheet->write($row+$i, $col+49,  '2x',     $format);
+$worksheet->write($row+$i, $col+50,  '3x',     $format);
+$worksheet->write($row+$i, $col+51,  '4x',     $format);
+$worksheet->write($row+$i, $col+52,  '5x',     $format);
+$worksheet->write($row+$i, $col+53,  '6x',     $format);
+$worksheet->write($row+$i, $col+54,  '7x',     $format);
+$worksheet->write($row+$i, $col+56,  '1x(%)',  $format);
+$worksheet->write($row+$i, $col+57,  '2x(%)',  $format);
+$worksheet->write($row+$i, $col+58,  '3x(%)',  $format);
+$worksheet->write($row+$i, $col+59,  '4x(%)',  $format);
+$worksheet->write($row+$i, $col+60,  '5x(%)',  $format);
+$worksheet->write($row+$i, $col+61,  '6x(%)',  $format);
+$worksheet->write($row+$i, $col+62,  '7x(%)',  $format);
 #BACKTOSCHOOL
-$worksheet->write($row+$i, $col+64,  'Day 1',      $format);
-$worksheet->write($row+$i, $col+65,  'Day 2',     $format);
-$worksheet->write($row+$i, $col+66,  'Day 3',     $format);
-$worksheet->write($row+$i, $col+67,  'Day 4',     $format);
-$worksheet->write($row+$i, $col+68,  'Day 5',     $format);
-$worksheet->write($row+$i, $col+69,  'Day 6',     $format);
-$worksheet->write($row+$i, $col+70,  'Day 7',     $format);
-$worksheet->write($row+$i, $col+72,  'D1(%)',     $format);
-$worksheet->write($row+$i, $col+73,  'D2(%)',     $format);
-$worksheet->write($row+$i, $col+74,  'D3(%)',     $format);
-$worksheet->write($row+$i, $col+75,  'D4(%)',     $format);
-$worksheet->write($row+$i, $col+76,  'D5(%)',     $format);
-$worksheet->write($row+$i, $col+77,  'D6(%)',     $format);
-$worksheet->write($row+$i, $col+78,  'D7(%)',     $format);
+$worksheet->write($row+$i, $col+64,  '1x',     $format);
+$worksheet->write($row+$i, $col+65,  '2x',     $format);
+$worksheet->write($row+$i, $col+66,  '3x',     $format);
+$worksheet->write($row+$i, $col+67,  '4x',     $format);
+$worksheet->write($row+$i, $col+68,  '5x',     $format);
+$worksheet->write($row+$i, $col+69,  '6x',     $format);
+$worksheet->write($row+$i, $col+70,  '7x',     $format);
+$worksheet->write($row+$i, $col+72,  '1x(%)',  $format);
+$worksheet->write($row+$i, $col+73,  '2x(%)',  $format);
+$worksheet->write($row+$i, $col+74,  '3x(%)',  $format);
+$worksheet->write($row+$i, $col+75,  '4x(%)',  $format);
+$worksheet->write($row+$i, $col+76,  '5x(%)',  $format);
+$worksheet->write($row+$i, $col+77,  '6x(%)',  $format);
+$worksheet->write($row+$i, $col+78,  '7x(%)',  $format);
 #WIKIPEDIA
-$worksheet->write($row+$i, $col+80,  'Day 1',      $format);
-$worksheet->write($row+$i, $col+81,  'Day 2',     $format);
-$worksheet->write($row+$i, $col+82,  'Day 3',     $format);
-$worksheet->write($row+$i, $col+83,  'Day 4',     $format);
-$worksheet->write($row+$i, $col+84,  'Day 5',     $format);
-$worksheet->write($row+$i, $col+85,  'Day 6',     $format);
-$worksheet->write($row+$i, $col+86,  'Day 7',     $format);
-$worksheet->write($row+$i, $col+88,  'D1(%)',     $format);
-$worksheet->write($row+$i, $col+89,  'D2(%)',     $format);
-$worksheet->write($row+$i, $col+90,  'D3(%)',     $format);
-$worksheet->write($row+$i, $col+91,  'D4(%)',     $format);
-$worksheet->write($row+$i, $col+92,  'D5(%)',     $format);
-$worksheet->write($row+$i, $col+93,  'D6(%)',     $format);
-$worksheet->write($row+$i, $col+94,  'D7(%)',     $format);
+$worksheet->write($row+$i, $col+80,  '1x',     $format);
+$worksheet->write($row+$i, $col+81,  '2x',     $format);
+$worksheet->write($row+$i, $col+82,  '3x',     $format);
+$worksheet->write($row+$i, $col+83,  '4x',     $format);
+$worksheet->write($row+$i, $col+84,  '5x',     $format);
+$worksheet->write($row+$i, $col+85,  '6x',     $format);
+$worksheet->write($row+$i, $col+86,  '7x',     $format);
+$worksheet->write($row+$i, $col+88,  '1x(%)',  $format);
+$worksheet->write($row+$i, $col+89,  '2x(%)',  $format);
+$worksheet->write($row+$i, $col+90,  '3x(%)',  $format);
+$worksheet->write($row+$i, $col+91,  '4x(%)',  $format);
+$worksheet->write($row+$i, $col+92,  '5x(%)',  $format);
+$worksheet->write($row+$i, $col+93,  '6x(%)',  $format);
+$worksheet->write($row+$i, $col+94,  '7x(%)',  $format);
 #PHOTO
-$worksheet->write($row+$i, $col+96,  'Day 1',      $format);
-$worksheet->write($row+$i, $col+97,  'Day 2',     $format);
-$worksheet->write($row+$i, $col+98,  'Day 3',     $format);
-$worksheet->write($row+$i, $col+99,  'Day 4',     $format);
-$worksheet->write($row+$i, $col+100, 'Day 5',     $format);
-$worksheet->write($row+$i, $col+101, 'Day 6',     $format);
-$worksheet->write($row+$i, $col+102, 'Day 7',     $format);
-$worksheet->write($row+$i, $col+104, 'D1(%)',     $format);
-$worksheet->write($row+$i, $col+105, 'D2(%)',     $format);
-$worksheet->write($row+$i, $col+106, 'D3(%)',     $format);
-$worksheet->write($row+$i, $col+107, 'D4(%)',     $format);
-$worksheet->write($row+$i, $col+108, 'D5(%)',     $format);
-$worksheet->write($row+$i, $col+109, 'D6(%)',     $format);
-$worksheet->write($row+$i, $col+110, 'D7(%)',     $format);
+$worksheet->write($row+$i, $col+96,  '1x',     $format);
+$worksheet->write($row+$i, $col+97,  '2x',     $format);
+$worksheet->write($row+$i, $col+98,  '3x',     $format);
+$worksheet->write($row+$i, $col+99,  '4x',     $format);
+$worksheet->write($row+$i, $col+100, '5x',     $format);
+$worksheet->write($row+$i, $col+101, '6x',     $format);
+$worksheet->write($row+$i, $col+102, '7x',     $format);
+$worksheet->write($row+$i, $col+104, '1x(%)',  $format);
+$worksheet->write($row+$i, $col+105, '2x(%)',  $format);
+$worksheet->write($row+$i, $col+106, '3x(%)',  $format);
+$worksheet->write($row+$i, $col+107, '4x(%)',  $format);
+$worksheet->write($row+$i, $col+108, '5x(%)',  $format);
+$worksheet->write($row+$i, $col+109, '6x(%)',  $format);
+$worksheet->write($row+$i, $col+110, '7x(%)',  $format);
 #CHAT
-$worksheet->write($row+$i, $col+112, 'Day 1',      $format);
-$worksheet->write($row+$i, $col+113, 'Day 2',     $format);
-$worksheet->write($row+$i, $col+114, 'Day 3',     $format);
-$worksheet->write($row+$i, $col+115, 'Day 4',     $format);
-$worksheet->write($row+$i, $col+116, 'Day 5',     $format);
-$worksheet->write($row+$i, $col+117, 'Day 6',     $format);
-$worksheet->write($row+$i, $col+118, 'Day 7',     $format);
-$worksheet->write($row+$i, $col+120, 'D1(%)',     $format);
-$worksheet->write($row+$i, $col+121, 'D2(%)',     $format);
-$worksheet->write($row+$i, $col+122, 'D3(%)',     $format);
-$worksheet->write($row+$i, $col+123, 'D4(%)',     $format);
-$worksheet->write($row+$i, $col+124, 'D5(%)',     $format);
-$worksheet->write($row+$i, $col+125, 'D6(%)',     $format);
-$worksheet->write($row+$i, $col+126, 'D7(%)',     $format);
+$worksheet->write($row+$i, $col+112, '1x',     $format);
+$worksheet->write($row+$i, $col+113, '2x',     $format);
+$worksheet->write($row+$i, $col+114, '3x',     $format);
+$worksheet->write($row+$i, $col+115, '4x',     $format);
+$worksheet->write($row+$i, $col+116, '5x',     $format);
+$worksheet->write($row+$i, $col+117, '6x',     $format);
+$worksheet->write($row+$i, $col+118, '7x',     $format);
+$worksheet->write($row+$i, $col+120, '1x(%)',  $format);
+$worksheet->write($row+$i, $col+121, '2x(%)',  $format);
+$worksheet->write($row+$i, $col+122, '3x(%)',  $format);
+$worksheet->write($row+$i, $col+123, '4x(%)',  $format);
+$worksheet->write($row+$i, $col+124, '5x(%)',  $format);
+$worksheet->write($row+$i, $col+125, '6x(%)',  $format);
+$worksheet->write($row+$i, $col+126, '7x(%)',  $format);
 #EMAIL
-$worksheet->write($row+$i, $col+128, 'Day 1',      $format);
-$worksheet->write($row+$i, $col+129, 'Day 2',     $format);
-$worksheet->write($row+$i, $col+130, 'Day 3',     $format);
-$worksheet->write($row+$i, $col+131, 'Day 4',     $format);
-$worksheet->write($row+$i, $col+132, 'Day 5',     $format);
-$worksheet->write($row+$i, $col+133, 'Day 6',     $format);
-$worksheet->write($row+$i, $col+134, 'Day 7',     $format);
-$worksheet->write($row+$i, $col+136, 'D1(%)',     $format);
-$worksheet->write($row+$i, $col+137, 'D2(%)',     $format);
-$worksheet->write($row+$i, $col+138, 'D3(%)',     $format);
-$worksheet->write($row+$i, $col+139, 'D4(%)',     $format);
-$worksheet->write($row+$i, $col+140, 'D5(%)',     $format);
-$worksheet->write($row+$i, $col+141, 'D6(%)',     $format);
-$worksheet->write($row+$i, $col+142, 'D7(%)',     $format);
+$worksheet->write($row+$i, $col+128, '1x',     $format);
+$worksheet->write($row+$i, $col+129, '2x',     $format);
+$worksheet->write($row+$i, $col+130, '3x',     $format);
+$worksheet->write($row+$i, $col+131, '4x',     $format);
+$worksheet->write($row+$i, $col+132, '5x',     $format);
+$worksheet->write($row+$i, $col+133, '6x',     $format);
+$worksheet->write($row+$i, $col+134, '7x',     $format);
+$worksheet->write($row+$i, $col+136, '1x(%)',  $format);
+$worksheet->write($row+$i, $col+137, '2x(%)',  $format);
+$worksheet->write($row+$i, $col+138, '3x(%)',  $format);
+$worksheet->write($row+$i, $col+139, '4x(%)',  $format);
+$worksheet->write($row+$i, $col+140, '5x(%)',  $format);
+$worksheet->write($row+$i, $col+141, '6x(%)',  $format);
+$worksheet->write($row+$i, $col+142, '7x(%)',  $format);
 #LINE
-$worksheet->write($row+$i, $col+144, 'Day 1',      $format);
-$worksheet->write($row+$i, $col+145, 'Day 2',     $format);
-$worksheet->write($row+$i, $col+146, 'Day 3',     $format);
-$worksheet->write($row+$i, $col+147, 'Day 4',     $format);
-$worksheet->write($row+$i, $col+148, 'Day 5',     $format);
-$worksheet->write($row+$i, $col+149, 'Day 6',     $format);
-$worksheet->write($row+$i, $col+150, 'Day 7',     $format);
-$worksheet->write($row+$i, $col+152, 'D1(%)',     $format);
-$worksheet->write($row+$i, $col+153, 'D2(%)',     $format);
-$worksheet->write($row+$i, $col+154, 'D3(%)',     $format);
-$worksheet->write($row+$i, $col+155, 'D4(%)',     $format);
-$worksheet->write($row+$i, $col+156, 'D5(%)',     $format);
-$worksheet->write($row+$i, $col+157, 'D6(%)',     $format);
-$worksheet->write($row+$i, $col+158, 'D7(%)',     $format);
+$worksheet->write($row+$i, $col+144, '1x',     $format);
+$worksheet->write($row+$i, $col+145, '2x',     $format);
+$worksheet->write($row+$i, $col+146, '3x',     $format);
+$worksheet->write($row+$i, $col+147, '4x',     $format);
+$worksheet->write($row+$i, $col+148, '5x',     $format);
+$worksheet->write($row+$i, $col+149, '6x',     $format);
+$worksheet->write($row+$i, $col+150, '7x',     $format);
+$worksheet->write($row+$i, $col+152, '1x(%)',  $format);
+$worksheet->write($row+$i, $col+153, '2x(%)',  $format);
+$worksheet->write($row+$i, $col+154, '3x(%)',  $format);
+$worksheet->write($row+$i, $col+155, '4x(%)',  $format);
+$worksheet->write($row+$i, $col+156, '5x(%)',  $format);
+$worksheet->write($row+$i, $col+157, '6x(%)',  $format);
+$worksheet->write($row+$i, $col+158, '7x(%)',  $format);
 #WECHAT
-$worksheet->write($row+$i, $col+160, 'Day 1',      $format);
-$worksheet->write($row+$i, $col+161, 'Day 2',     $format);
-$worksheet->write($row+$i, $col+162, 'Day 3',     $format);
-$worksheet->write($row+$i, $col+163, 'Day 4',     $format);
-$worksheet->write($row+$i, $col+164, 'Day 5',     $format);
-$worksheet->write($row+$i, $col+165, 'Day 6',     $format);
-$worksheet->write($row+$i, $col+166, 'Day 7',     $format);
-$worksheet->write($row+$i, $col+168, 'D1(%)',     $format);
-$worksheet->write($row+$i, $col+169, 'D2(%)',     $format);
-$worksheet->write($row+$i, $col+170, 'D3(%)',     $format);
-$worksheet->write($row+$i, $col+171, 'D4(%)',     $format);
-$worksheet->write($row+$i, $col+172, 'D5(%)',     $format);
-$worksheet->write($row+$i, $col+173, 'D6(%)',     $format);
-$worksheet->write($row+$i, $col+174, 'D7(%)',     $format);
+$worksheet->write($row+$i, $col+160, '1x',     $format);
+$worksheet->write($row+$i, $col+161, '2x',     $format);
+$worksheet->write($row+$i, $col+162, '3x',     $format);
+$worksheet->write($row+$i, $col+163, '4x',     $format);
+$worksheet->write($row+$i, $col+164, '5x',     $format);
+$worksheet->write($row+$i, $col+165, '6x',     $format);
+$worksheet->write($row+$i, $col+166, '7x',     $format);
+$worksheet->write($row+$i, $col+168, '1x(%)',  $format);
+$worksheet->write($row+$i, $col+169, '2x(%)',  $format);
+$worksheet->write($row+$i, $col+170, '3x(%)',  $format);
+$worksheet->write($row+$i, $col+171, '4x(%)',  $format);
+$worksheet->write($row+$i, $col+172, '5x(%)',  $format);
+$worksheet->write($row+$i, $col+173, '6x(%)',  $format);
+$worksheet->write($row+$i, $col+174, '7x(%)',  $format);
 #SNAPCHAT
-$worksheet->write($row+$i, $col+176, 'Day 1',      $format);
-$worksheet->write($row+$i, $col+177, 'Day 2',     $format);
-$worksheet->write($row+$i, $col+178, 'Day 3',     $format);
-$worksheet->write($row+$i, $col+179, 'Day 4',     $format);
-$worksheet->write($row+$i, $col+180, 'Day 5',     $format);
-$worksheet->write($row+$i, $col+181, 'Day 6',     $format);
-$worksheet->write($row+$i, $col+182, 'Day 7',     $format);
-$worksheet->write($row+$i, $col+184, 'D1(%)',     $format);
-$worksheet->write($row+$i, $col+185, 'D2(%)',     $format);
-$worksheet->write($row+$i, $col+186, 'D3(%)',     $format);
-$worksheet->write($row+$i, $col+187, 'D4(%)',     $format);
-$worksheet->write($row+$i, $col+188, 'D5(%)',     $format);
-$worksheet->write($row+$i, $col+189, 'D6(%)',     $format);
-$worksheet->write($row+$i, $col+190, 'D7(%)',     $format);
+$worksheet->write($row+$i, $col+176, '1x',     $format);
+$worksheet->write($row+$i, $col+177, '2x',     $format);
+$worksheet->write($row+$i, $col+178, '3x',     $format);
+$worksheet->write($row+$i, $col+179, '4x',     $format);
+$worksheet->write($row+$i, $col+180, '5x',     $format);
+$worksheet->write($row+$i, $col+181, '6x',     $format);
+$worksheet->write($row+$i, $col+182, '7x',     $format);
+$worksheet->write($row+$i, $col+184, '1x(%)',  $format);
+$worksheet->write($row+$i, $col+185, '2x(%)',  $format);
+$worksheet->write($row+$i, $col+186, '3x(%)',  $format);
+$worksheet->write($row+$i, $col+187, '4x(%)',  $format);
+$worksheet->write($row+$i, $col+188, '5x(%)',  $format);
+$worksheet->write($row+$i, $col+189, '6x(%)',  $format);
+$worksheet->write($row+$i, $col+190, '7x(%)',  $format);
 #WAZE
-$worksheet->write($row+$i, $col+192, 'Day 1',      $format);
-$worksheet->write($row+$i, $col+193, 'Day 2',     $format);
-$worksheet->write($row+$i, $col+194, 'Day 3',     $format);
-$worksheet->write($row+$i, $col+195, 'Day 4',     $format);
-$worksheet->write($row+$i, $col+196, 'Day 5',     $format);
-$worksheet->write($row+$i, $col+197, 'Day 6',     $format);
-$worksheet->write($row+$i, $col+198, 'Day 7',     $format);
-$worksheet->write($row+$i, $col+200, 'D1(%)',     $format);
-$worksheet->write($row+$i, $col+201, 'D2(%)',     $format);
-$worksheet->write($row+$i, $col+202, 'D3(%)',     $format);
-$worksheet->write($row+$i, $col+203, 'D4(%)',     $format);
-$worksheet->write($row+$i, $col+204, 'D5(%)',     $format);
-$worksheet->write($row+$i, $col+205, 'D6(%)',     $format);
-$worksheet->write($row+$i, $col+206, 'D7(%)',     $format);
+$worksheet->write($row+$i, $col+192, '1x',     $format);
+$worksheet->write($row+$i, $col+193, '2x',     $format);
+$worksheet->write($row+$i, $col+194, '3x',     $format);
+$worksheet->write($row+$i, $col+195, '4x',     $format);
+$worksheet->write($row+$i, $col+196, '5x',     $format);
+$worksheet->write($row+$i, $col+197, '6x',     $format);
+$worksheet->write($row+$i, $col+198, '7x',     $format);
+$worksheet->write($row+$i, $col+200, '1x(%)',  $format);
+$worksheet->write($row+$i, $col+201, '2x(%)',  $format);
+$worksheet->write($row+$i, $col+202, '3x(%)',  $format);
+$worksheet->write($row+$i, $col+203, '4x(%)',  $format);
+$worksheet->write($row+$i, $col+204, '5x(%)',  $format);
+$worksheet->write($row+$i, $col+205, '6x(%)',  $format);
+$worksheet->write($row+$i, $col+206, '7x(%)',  $format);
 #TUMBLR
-$worksheet->write($row+$i, $col+208, 'Day 1',      $format);
-$worksheet->write($row+$i, $col+209, 'Day 2',     $format);
-$worksheet->write($row+$i, $col+210, 'Day 3',     $format);
-$worksheet->write($row+$i, $col+211, 'Day 4',     $format);
-$worksheet->write($row+$i, $col+212, 'Day 5',     $format);
-$worksheet->write($row+$i, $col+213, 'Day 6',     $format);
-$worksheet->write($row+$i, $col+214, 'Day 7',     $format);
-$worksheet->write($row+$i, $col+216, 'D1(%)',     $format);
-$worksheet->write($row+$i, $col+217, 'D2(%)',     $format);
-$worksheet->write($row+$i, $col+218, 'D3(%)',     $format);
-$worksheet->write($row+$i, $col+219, 'D4(%)',     $format);
-$worksheet->write($row+$i, $col+220, 'D5(%)',     $format);
-$worksheet->write($row+$i, $col+221, 'D6(%)',     $format);
-$worksheet->write($row+$i, $col+222, 'D7(%)',     $format);
+$worksheet->write($row+$i, $col+208, '1x',     $format);
+$worksheet->write($row+$i, $col+209, '2x',     $format);
+$worksheet->write($row+$i, $col+210, '3x',     $format);
+$worksheet->write($row+$i, $col+211, '4x',     $format);
+$worksheet->write($row+$i, $col+212, '5x',     $format);
+$worksheet->write($row+$i, $col+213, '6x',     $format);
+$worksheet->write($row+$i, $col+214, '7x',     $format);
+$worksheet->write($row+$i, $col+216, '1x(%)',  $format);
+$worksheet->write($row+$i, $col+217, '2x(%)',  $format);
+$worksheet->write($row+$i, $col+218, '3x(%)',  $format);
+$worksheet->write($row+$i, $col+219, '4x(%)',  $format);
+$worksheet->write($row+$i, $col+220, '5x(%)',  $format);
+$worksheet->write($row+$i, $col+221, '6x(%)',  $format);
+$worksheet->write($row+$i, $col+222, '7x(%)',  $format);
 
 
 while (@rowRst = $sth_hi_10->fetchrow()) {
