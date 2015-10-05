@@ -906,3 +906,26 @@ end;
 //
 delimiter ;
 
+
+
+select tran_dt, 
+       (w30_days+w29_days+w28_days+w27_days+w26_days+w25_days+w24_days+w23_days+w22_days+w21_days+w20_days+w19_days+w18_days+w17_days+w16_days+
+        w15_days+w14_days+w13_days+w12_days+w11_days+w10_days+w9_days +w8_days +w7_days +w6_days +w5_days +w4_days +w3_days +w2_days +w1_days) tot_mins,
+       new_users, new_old, wk_new_users,
+       new_users+new_old+wk_new_users tot_mins2
+from   powerapp_retention_stats_monthly 
+where  tran_dt >= '2015-07-01';
+
+select tran_dt, 
+       (w15_days+w14_days+w13_days+w12_days+w11_days+w10_days+w09_days +w08_days +w07_days +w06_days +w05_days +w04_days +w03_days +w02_days +w01_days) tot_mins,
+       new_users, new_old, wk_new_users,
+       new_users+new_old+wk_new_users tot_mins2
+from   powerapp_15day_retention_stats
+where  tran_dt >= '2015-07-01';
+
+select tran_dt, 
+       (w7_days +w6_days +w5_days +w4_days +w3_days +w2_days +w1_days) tot_mins,
+       new_users, old_users, wk_new_users,
+       new_users+old_users+wk_new_users tot_mins2
+from   powerapp_retention_stats
+where  tran_dt >= '2015-07-01';
