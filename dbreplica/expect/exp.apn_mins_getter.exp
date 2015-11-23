@@ -1,0 +1,22 @@
+#!/usr/bin/expect -f
+set arg1 [lindex $argv 0]
+set arg2 [lindex $argv 1]
+set arg3 [lindex $argv 2]
+spawn scp -P9922 $arg1@172.17.150.52:/home/noc/redis_audit/logs_6317/redis6317_*$arg3* /home/mysql/dmp/udr/.
+#expect "Connecting to 172.17.250.55..."
+#expect " "
+expect "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ W A R N I N G @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+expect ""
+expect "THIS SYSTEM IS RESTRICTED TO AUTHORIZED USERS FOR AUTHORIZED USE"
+expect "ONLY. UNAUTHORIZED ACCESS IS STRICTLY PROHIBITED AND MAY BE"
+expect "PUNISHABLE UNDER THE \"PHILIPPINE E-COMMERCE LAW\" (Republic Act No. 8792)"
+expect "OR OTHER APPLICABLE LAWS. IF NOT AUTHORIZED TO ACCESS THIS SYSTEM,"
+expect "DISCONNECT NOW. BY CONTINUING, YOU CONSENT TO YOUR KEYSTROKES"
+expect "AND DATA CONTENT BEING MONITORED. ALL PERSONS ARE HEREBY"
+expect "NOTIFIED THAT THE USE OF THIS SYSTEM CONSTITUTES CONSENT TO"
+expect "MONITORING AND AUDITING."
+expect ""
+expect "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ W A R N I N G @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+expect "dbadmins@172.17.150.52's password:"
+send "$arg2\n"
+sleep 1

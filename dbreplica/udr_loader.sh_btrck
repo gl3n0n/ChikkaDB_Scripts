@@ -1,0 +1,49 @@
+#!/bin/bash
+
+. /etc/profile
+#. /home/mysql/.bash_profile
+
+# CREATED BY ALLAN FAYLONA 2014-02-06
+# PULL DATA LOGS FROM application server
+a=$1
+# %k     hour ( 0..23)
+#var_date=`date +%Y-%m-%d -d '14 day ago'`
+#var_cur=`date +%Y%m%d`
+# %k     hour ( 0..23)
+var_dir=/home/mysql/vars/
+var_log=/home/mysql/log
+var_dmp=/mnt/paywall_dmp/dmp
+
+var_usr=`head -1 $var_dir/usr.list`
+var_pn=`head -1  $var_dir/pn.list`
+var_chk=`tail -1  $var_dir/pn.list`
+var_chk2=`tail -2  $var_dir/pn.list | head -1 `
+db_prt=3307
+db_host="127.0.0.1"
+db_conn="mysql -ustats -p$var_chk2 archive_powerapp_flu -h$db_host -P$db_prt"
+db_opt="-N -e"
+
+logger(){
+  echo "`date` : $*" >> $var_log/$var_cur.sftp.log
+}
+
+load_dmp_() {
+ echo "Parsing 2nd part" >> $var_log/$var_cur.sftp.log
+  echo $a
+   #cat $a | awk -F',' '{printf $4"+"$5"+"$7"+"$8"+"$13"+"$14"+"$17 "\n"}' | awk -F'+' '{printf substr($1,0,10)","substr($1,0,19)","substr($3,0,19)","$5","$6","$7","$8","$9"\n"}'  > $a.txt
+    cat $a | grep "twitter" | awk -F',' '{printf $4"+"$5"+"$7"+"$8"+"$14"+"$15"+"$18"+"$11 "\n"}' |  awk -F'+' '{printf substr($1,0,10)","substr($1,0,19)","substr($3,0,19)","$5","$6","$7","$8","$9","$10"\n"}' > $a.txt
+   file_cnt=`wc -l $a.txt | awk '{print $1}'`
+   file_cnt2=$((file_cnt - 1))
+  echo $file_cnt 
+  echo $a.txt 
+  flcnt=`echo $a.txt | sed 's/\/mnt\/paywall_dmp\/dmp\/udr\///g'`
+  flcnt2=`echo $a.txt | sed 's/\/mnt\/paywall_dmp\/dmp\/udr\///g'| cut -d '_' -f 3-5`
+  `$db_conn $db_opt "INSERT INTO tmp_udr_log_uploads(logfile,rawfile_cnt )VALUES('$flcnt',$file_cnt2)"` 
+#rm -f $a
+  echo "DB loading  part2" >> $var_log/$var_cur.sftp.log
+  `$db_conn $db_opt "LOAD DATA LOCAL INFILE '$a.txt'  IGNORE  INTO TABLE archive_powerapp_flu.powerapp_udr_log  FIELDS TERMINATED by ',' IGNORE 1 LINES (tx_date,start_tm,end_tm,phone,ip_addr,source,service,b_usage,device) SET gen_date='$flcnt2'"`
+# rm -f $a.txt
+}
+
+load_dmp_
+

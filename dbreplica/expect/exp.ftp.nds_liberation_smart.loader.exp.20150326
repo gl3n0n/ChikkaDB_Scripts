@@ -1,0 +1,14 @@
+#!/usr/bin/expect -f
+set arg1 [lindex $argv 0]
+set timeout -1
+spawn ftp 10.132.142.115
+expect "Name (10.132.142.115:mysql): " { send -- "lib_tnt_usage\r"}
+expect "*?assword:" { send -- "tnt_usag3\r" }
+expect "ftp>" { send -- "prompt\r" }
+expect "ftp>" { send -- "bin\r" }
+expect "ftp>" { send -- "cd /USAGE\r" }
+sleep 1
+expect "ftp>" { send -- "put Liberation_*_usage_$arg1*.csv\r" }
+sleep 3
+expect "ftp>"
+send "bye\r"

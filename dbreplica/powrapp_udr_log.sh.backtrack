@@ -1,0 +1,166 @@
+#!/bin/bash
+
+. /etc/profile
+#. /home/mysql/.bash_profile
+
+# CREATED BY ALLAN FAYLONA 2014-02-06
+# PULL DATA LOGS FROM application server
+
+var_date=`date +%Y_%m_%d -d '5 day ago'`
+proc_date=`date +%Y-%m-%d -d '5 day ago'`
+#var_date=`date +%Y_%m_%d`
+#proc_date=`date +%Y-%m-%d` 
+var_cur=`date +%Y%m%d`
+# %k     hour ( 0..23)
+var_dir="/home/mysql/vars"
+var_log="/home/mysql/log"
+var_dmp="/mnt/paywall_dmp/dmp"
+var_loc_list="/mnt/paywall_dmp/udr/local_file_log"
+var_remote_list="/mnt/paywall_dmp/udr/remote_file_log"
+export var_date var_cur var_dir var_log var_dmp proc_date
+
+var_usr=`head -1 $var_dir/usr.list`
+var_pn=`head -1  $var_dir/pn.list`
+var_chk=`tail -1  $var_dir/pn.list`
+var_chk2=`tail -2  $var_dir/pn.list | head -1 `
+db_prt=3307
+db_host="127.0.0.1"
+db_conn="mysql -ustats -p$var_chk2 archive_powerapp_flu -h$db_host -P$db_prt"
+db_opt="-N -e"
+
+logger(){
+  echo "`date` : $*" >> $var_log/$var_cur.sftp.log
+}
+
+load_dmp_prev() {
+  #`$db_conn $db_opt "TRUNCATE TABLE powerapp_udr_log"`
+  cd $var_dmp/udr/
+  for i in `ls *.bz2`
+  do
+    logger "Decompressing file $i"
+    bzip2 -d $i
+  done
+
+  
+}
+
+load_exp_prev() {
+   cd $var_dmp/udr
+   COUNTER=$1
+   echo $COUNTER
+#   logger "PULL data process from sandvine started"
+  # /home/mysql/scripts/expect/exp.udr_logs_getter.exp.20141111.exp  $var_usr $var_pn $var_date
+
+   until [ $COUNTER -eq 0 ] ; do
+       while read line 
+       do 
+          # cd $var_dmp/udr
+          /home/mysql/scripts/expect/exp.udr_logs_getter.exp  $var_usr $var_pn $line 
+          let COUNTER-=1
+          logger "Successfully Transferred UDR File: $line" 
+       done < $var_remote_list/b_"$var_date"_udr.remote_list
+   done
+    
+
+}
+
+reproc_dmp() {
+  cd $var_dmp/udr/
+  for x in `ls $1`
+  do
+    bzip2 -d $x
+  done
+}
+  logger "UDR Stats Process Started"
+  /home/mysql/scripts/expect/exp.udr_log_remote_list $var_usr $var_pn $var_date > $var_remote_list/"$var_date"_udr.remote_list
+   RemoteFileCnt=`cat $var_remote_list/"$var_date"_udr.remote_list | grep udr.bz2 | wc -l | awk '{print $1"    '$var_date'"}'` # > /home/mysql/scripts/remote_files_dlList.txt
+  logger "Total number of UDR files to Transfer: $RemoteFileCnt"
+   cat $var_remote_list/"$var_date"_udr.remote_list | grep udr.bz2 |  awk '{print $9}' > $var_remote_list/b_"$var_date"_udr.remote_list
+  logger "UDR Data Transfer Started"
+   load_exp_prev $RemoteFileCnt
+   cd /mnt/paywall_dmp/dmp/udr/ 
+  logger "UDR Data Transfer Completed"
+   ls -ltr * |  awk '{print $9}' | sed '/^\s*$/d' >  $var_loc_list/"$var_date"_udr_local_list
+   LocalFileCnt=`cat $var_loc_list/"$var_date"_udr_local_list | wc -l`
+  logger "Total number of Transferred UDR files: $LocalFileCnt"
+   sort $var_remote_list/b_"$var_date"_udr.remote_list  --output=$var_remote_list/sorted_"$var_date"_udr.remote_list    
+   sort $var_loc_list/"$var_date"_udr_local_list --output=$var_loc_list/sorted_"$var_date"_udr_local_list
+   diff -q --ignore-all-space --ignore-blank-lines $var_remote_list/sorted_"$var_date"_udr.remote_list $var_loc_list/sorted_"$var_date"_udr_local_list > /tmp/remot_local_chk.txt
+
+   if [  -s "/tmp/remot_local_chk.txt" ] ; then
+         echo "FILE not match"
+         logger "Error: Downloaded Files Does not match with Source"
+   else
+          echo "Match"
+          logger "Files Match With Source"
+          logger "UDR Decompression proces Started "
+          load_dmp_prev
+          cd $var_dmp/udr/
+          chk_err_file=`ls *.bz2 | wc -l`
+
+          if [ $chk_err_file -gt 0 ] ; then
+             for abc in `ls *.bz2`
+             do 
+                 home/mysql/scripts/expect/exp.udr_logs_reprocess.exp $var_usr $var_pn $abc
+                 load_dmp_prev
+                 sleep 1
+              done
+          fi 
+
+          if [ "$?" -ne "0" ]; then
+              echo "Error running udr log report"
+              exit 1
+          else
+              logger "UDR Data Import process Started "
+             `$db_conn $db_opt "call sp_tab_maintain()"`
+#             `$db_conn $db_opt "TRUNCATE  archive_powerapp_flu.powerapp_udr_log"`
+             `$db_conn $db_opt "TRUNCATE TABLE archive_powerapp_flu.tmp_udr_log_uploads"`
+              find $var_dmp/udr -name  'SANDVINE*.udr' -exec  sh /home/mysql/scripts/udr_loader.sh_btrck {} \;
+             `$db_conn $db_opt  "call sp_generate_udr_usage('$proc_date')"`
+              rw_cnt=`$db_conn $db_opt "SELECT count(1) from archive_powerapp_flu.powerapp_udr_log WHERE tx_date='$proc_date'"`
+             `$db_conn $db_opt "REPLACE INTO total_udr_upload select '$proc_date',sum(rawfile_cnt),$rw_cnt from tmp_udr_log_uploads"`
+              logger "UDR Data Import Completed "
+              logger "UDR Stats Process Completed "
+
+          fi
+
+
+
+   fi
+
+#cd $var_dmp/udr
+#load_exp_prev
+#load_dmp_prev
+
+###cd /home/mysql/dmp/udr
+#cd $var_dmp/udr/
+#
+#chk_err_file=`ls *.bz2 | wc -l`
+#if [ "$?" -ne "0" ]; then
+#  chk_err_file=0
+#  exit 1
+#fi
+
+#echo $chk_err_file
+#if [ $chk_err_file -gt 0 ] ; then
+#   for abc in `ls *.bz2`
+#   do
+#     /home/mysql/scripts/expect/exp.udr_logs_reprocess.exp $var_usr $var_pn $abc
+#    echo $abc
+#    load_dmp_prev
+ #   sleep 1
+ #  done   
+#fi
+
+#if [ "$?" -ne "0" ]; then
+#  echo "Error running udr log report"
+#  exit 1
+#else
+#    `$db_conn $db_opt "call sp_tab_maintain()"`
+##    `$db_conn $db_opt "TRUNCATE  archive_powerapp_flu.powerapp_udr_log"`
+#    `$db_conn $db_opt "TRUNCATE TABLE archive_powerapp_flu.tmp_udr_log_uploads"`
+#    find $var_dmp/udr -name  'SANDVINE*.udr' -exec  sh /home/mysql/scripts/udr_loader.sh_btrck {} \;
+#    `$db_conn $db_opt  "call sp_generate_udr_usage('$proc_date')"` 
+#    rw_cnt=`$db_conn $db_opt "SELECT count(1) from archive_powerapp_flu.powerapp_udr_log"`
+#    `$db_conn $db_opt "REPLACE INTO total_udr_upload select '$proc_date',sum(rawfile_cnt),$rw_cnt from tmp_udr_log_uploads"`
+#fi

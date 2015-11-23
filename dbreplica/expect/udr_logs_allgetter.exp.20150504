@@ -1,0 +1,14 @@
+#!/usr/bin/expect -f
+set arg1 [lindex $argv 0]
+set arg2 [lindex $argv 1]
+set arg3 [lindex $argv 2]
+spawn sftp $arg1@172.17.250.62
+expect "Connecting to 172.17.250.62..."
+expect "*?assword:"
+send "$arg2\n"
+expect "sftp> "{ send -- "cd /mnt/sandvine.dock/sandvine/target/UDR/\r" }
+expect "stfp> "
+expect "sftp>" { send -- "get $arg3\r" }
+sleep 1
+expect "sftp>"
+send "bye\r"

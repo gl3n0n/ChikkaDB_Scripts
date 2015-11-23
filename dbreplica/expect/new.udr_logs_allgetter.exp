@@ -1,0 +1,15 @@
+#!/usr/bin/expect -f
+set arg1 [lindex $argv 0]
+set arg2 [lindex $argv 1]
+set arg3 [lindex $argv 2]
+spawn sftp $arg1@172.17.250.62
+expect "Connecting to 172.17.250.62..."
+expect "           "
+sleep 2
+expect "*?assword: "
+send "$arg2\n"
+#expect "sftp> "
+expect "sftp> "  { send -- "get $arg3\r" }
+expect "sftp> "
+expect "sftp>"
+send "quit\n"

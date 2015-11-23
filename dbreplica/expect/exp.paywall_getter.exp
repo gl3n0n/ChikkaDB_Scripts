@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+set arg1 [lindex $argv 0]
+set arg2 [lindex $argv 1]
+set arg3 [lindex $argv 2]
+set timeout -1
+spawn sftp $arg1@172.17.140.52
+expect "Connecting to 172.17.140.52..."
+expect " "
+expect "*?assword:"
+send "$arg2\n"
+expect "sftp>" { send -- "cd /var/log/devo/paywall/\r" }
+sleep 1
+expect "sftp>" { send -- "mget paywall.log.$arg3*.gz\r" }
+sleep 3
+expect "sftp>"
+send "bye\r"

@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+set arg1 [lindex $argv 0]
+set arg2 [lindex $argv 1]
+set arg3 [lindex $argv 2]
+spawn sftp $arg1@172.17.250.162
+expect "Connecting to 172.17.250.162..."
+expect " "
+expect "*?assword:"
+send "$arg2\n"
+expect "sftp>" { send -- "cd /incoming/\r" }
+sleep 1
+expect "sftp>" { send -- "ls -l $arg3.csv\r" }
+expect "sftp>"
+sleep 1
+expect "sftp>"
+send "bye\r"

@@ -1,0 +1,17 @@
+#!/usr/bin/expect -f
+set arg1 [lindex $argv 0]
+set arg2 [lindex $argv 1]
+set arg3 [lindex $argv 2]
+set timeout -1
+spawn sftp $arg1@172.17.250.165
+expect "Connecting to 172.17.250.165..."
+expect " "
+expect "*?assword:"
+send "$arg2\n"
+expect "sftp>" { send -- "cd /usr/local/sandvine/var/spool/logging/target/UDR/\r" }
+sleep 1
+expect "sftp>" { send -- "mget SANDVINE_*_$arg3*\r" }
+expect "sftp>"
+sleep 1
+expect "sftp>"
+send "bye\r"
