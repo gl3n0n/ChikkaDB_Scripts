@@ -914,7 +914,7 @@ select tran_dt,
        new_users, new_old, wk_new_users,
        new_users+new_old+wk_new_users tot_mins2
 from   powerapp_retention_stats_monthly 
-where  tran_dt >= '2015-07-01';
+where  tran_dt like '2015-02%';
 
 select tran_dt, 
        (w15_days+w14_days+w13_days+w12_days+w11_days+w10_days+w09_days +w08_days +w07_days +w06_days +w05_days +w04_days +w03_days +w02_days +w01_days) tot_mins,
@@ -929,3 +929,28 @@ select tran_dt,
        new_users+old_users+wk_new_users tot_mins2
 from   powerapp_retention_stats
 where  tran_dt >= '2015-07-01';
+
+
+
+drop procedure if exists sp_backtrack_retention_stats_monthly;
+delimiter //
+create procedure sp_backtrack_retention_stats_monthly (p_start date)
+begin
+   set session tmp_table_size = 268435456;
+   set session max_heap_table_size = 268435456;
+   set session sort_buffer_size = 104857600;
+   set session read_buffer_size = 8388608;
+
+   set @vCtr = 0;
+   set @vMax = right(last_day(p_start),2);
+   SELECT concat('Processing ', @vCtr+1, ' to ', @vMax) Date;
+   WHILE (@vCtr <= (@vMax-1)) DO
+      select date_add(p_start, interval @vCtr day) INTO @vDate;
+      SELECT concat('Processing ', @vDate, '...') Date;
+      call sp_generate_retention_stats_monthly (@vDate);
+      SET @vCtr = @vCtr + 1; 
+   END WHILE;
+end;
+//
+delimiter ;
+call sp_backtrack_retention_stats_monthly ('2015-02-01');

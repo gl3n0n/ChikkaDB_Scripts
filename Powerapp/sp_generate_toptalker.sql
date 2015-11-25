@@ -36,7 +36,7 @@ begin
 
    delete from powerapp_nds_brand_usage where tx_date=  p_trandate;
    insert ignore into powerapp_nds_brand_usage (tx_date, brand, transmit, received, tx_usage, num_subs)
-   select b.tx_date, a.brand, sum(b.transmit), sum(b.received), sum(b.transmit+b.received), count(distinct phone) 
+   select b.tx_date, a.brand, sum(b.transmit), sum(b.received), sum(b.transmit+b.received), count(distinct a.phone) 
    from   powerapp_users_apn a, powerapp_nds_log b 
    where  a.phone = b.phone
    and    b.tx_date = p_trandate
@@ -49,6 +49,18 @@ delimiter ;
 
 GRANT EXECUTE ON PROCEDURE `archive_powerapp_flu`.`sp_generate_toptalker` TO 'stats'@'localhost';
 flush privileges;
+
+
+
+SET BULK_INSERT_BUFFER_SIZE = 20*1024*1024; 
+\! gzip -d /mnt/paywall_dmp/dmp/nds/out/2015-10-11.csv.gz
+TRUNCATE TABLE archive_powerapp_flu.powerapp_nds_log;
+LOAD DATA LOCAL INFILE '/mnt/paywall_dmp/dmp/nds/out/2015-10-11.csv'  IGNORE  INTO TABLE archive_powerapp_flu.powerapp_nds_log FIELDS TERMINATED by ',' (phone,service,transmit,received) SET tx_date='2015-10-11';
+call sp_generate_toptalker ('2015-10-11');
+\! gzip /mnt/paywall_dmp/dmp/nds/out/2015-10-11.csv
+  
+
+
 
 
 select count(distinct phone) from powerapp_log where datein >= '2014-09-01 00:00:00' and datein < '2014-09-01 05:00:00';

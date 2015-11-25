@@ -462,6 +462,7 @@ begin
               @coc_hits_24,         @coc_uniq_24,
               @youtube_hits_30,     @youtube_uniq_30);
    END WHILE;
+   call sp_generate_month_days(p_trandate);
    -- generate report per brand
    call sp_generate_hi10_brand_stats(@tran_dt);
 END;

@@ -149,3 +149,13 @@ END;
 delimiter ;
 
 
+DROP EVENT evt_generate_stats_smartservervice;
+delimiter //
+CREATE EVENT evt_generate_stats_smartservervice
+ON SCHEDULE 
+EVERY 1 DAY STARTS '2015-01-28 04:00:00' 
+DO 
+  call sp_generate_stats_smartservervice(date_sub(curdate(), interval 1 day));
+//
+delimiter ;
+

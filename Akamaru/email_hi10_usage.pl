@@ -31,7 +31,12 @@ my @nRowCtr;
 
 # Add a worksheet[0]
 $strMain  = "select 0 seq_no, 'Summary' service, 'Summary' service_desc union 
-             select 1 seq_no, service, replace(service, 'Service', '') service_desc from powerapp_plan_services_mapping order by 1,2,3";
+             select 1 seq_no, service, replace(service, 'Service', '') service_desc 
+             from powerapp_plan_services_mapping a
+             where exists (select 1 from usage_per_plan b where a.service=b.service and left(b.datein,7) = '".$current_date."')
+             and   exists (select 1 from unique_subs c where a.service=c.service and left(c.datein,7) = '".$current_date."')
+             and   exists (select 1 from buys_per_plan d where a.service=d.service and left(d.datein,7) = '".$current_date."')
+             order by 1,2,3";
 $sth_main = $dbh_hi10->prepare($strMain);                                                                                                  
 $sth_main->execute();
 $nRowCtr=0;
@@ -93,7 +98,12 @@ $format3->set_align('center');
 $format3->set_border(2);
 
 # generate worksheets
-$strMain  = "select 0 seq_no, 'Summary' service, 'SUMMARY' service_desc union select 1 seq_no, service, upper(replace(service, 'Service', '')) service_desc from powerapp_plan_services_mapping order by 1,2,3";
+$strMain  = "select 0 seq_no, 'Summary' service, 'SUMMARY' service_desc union select 1 seq_no, service, upper(replace(service, 'Service', '')) service_desc 
+             from powerapp_plan_services_mapping a
+             where exists (select 1 from usage_per_plan b where a.service=b.service and left(b.datein,7) = '".$current_date."')
+             and   exists (select 1 from unique_subs c where a.service=c.service and left(c.datein,7) = '".$current_date."')
+             and   exists (select 1 from buys_per_plan d where a.service=d.service and left(d.datein,7) = '".$current_date."')
+             order by 1,2,3";
 $sth_main = $dbh_hi10->prepare($strMain);                                                                                                  
 $sth_main->execute();
 $nRowCtr=0;
@@ -181,8 +191,8 @@ $workbook->close();
 $from = "powerapp_stats\@chikka.com";
 $to = "victor\@chikka.com";
 $cc = "dbadmins\@chikka.com";
-$to = "glenon\@chikka.com";
-$cc = "glenon\@chikka.com";
+#$to = "glenon\@chikka.com";
+#$cc = "glenon\@chikka.com";
 $Subject = "PowerApp Usage Stats, ".$current_day;
 
 # Part using which the attachment is sent to an email #

@@ -77,13 +77,16 @@ $worksheet[2] = $workbook->add_worksheet("Users");
 $worksheet[3] = $workbook->add_worksheet("Buys");
 
    # START: Worksheet Summary / Volume / Users (1st,2nd,3rd)
-   $strMain  = "call sp_generate_month_days('".$current_date."-01')";
-   $sth_main = $dbh_hi10->prepare($strMain);                                                                                                  
-   $sth_main->execute();
+   # $strMain  = "call sp_generate_month_days('".$current_date."-01')"; -- runs on generate hi10 report
+   # $sth_main = $dbh_hi10->prepare($strMain);                                                                                                  
+   # $sth_main->execute();
    # print "SQL: $strMain\n";
    $strMain  = "select service, upper(replace(service, 'Service', '')) service_desc, 
                        if (length(replace(service, 'Service', ''))<=5, 6, length(replace(service, 'Service', '')))+2  service_len 
-                from powerapp_plan_services_mapping order by 1,2";
+                from powerapp_plan_services_mapping a
+                where exists (select 1 from usage_per_plan b where a.service=b.service and left(b.datein,7) = '".$current_date."')
+                and   exists (select 1 from unique_subs c where a.service=c.service and left(c.datein,7) = '".$current_date."')
+                order by 1,2";
    $sth_main = $dbh_hi10->prepare($strMain);                                                                                                  
    $sth_main->execute();
    $nColCtr=0;
@@ -163,7 +166,10 @@ $worksheet[3] = $workbook->add_worksheet("Buys");
    # $strMain  = "select if(service='ClashofclansService', 'UnlimitedService', service) service, 
    $strMain  = "select service, upper(replace(service, 'Service', '')) service_desc, 
                        if (length(replace(service, 'Service', ''))<=5, 6, length(replace(service, 'Service', '')))+2  service_len
-                from powerapp_plan_services_mapping order by 2";
+                from powerapp_plan_services_mapping a
+                where exists (select 1 from usage_per_plan b where a.service=b.service and left(b.datein,7) = '".$current_date."')
+                and   exists (select 1 from unique_subs c where a.service=c.service and left(c.datein,7) = '".$current_date."')
+                order by 2";
    $sth_main = $dbh_hi10->prepare($strMain);                                                                                                  
    $sth_main->execute();
    $nColCtr=0;
