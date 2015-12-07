@@ -16,12 +16,14 @@ begin
    delete from powerapp_udr_toptalker_log where tx_date = p_trandate;
    delete from powerapp_udr_tables_cnt where tx_date = p_trandate;
 
+   create temporary table if not exists tmp_top_mins_stage (phone varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx (phone));
    create temporary table if not exists tmp_top_mins (phone varchar(12) not null, tx_usage bigint(18) default 0 not null, primary key (phone));
    create temporary table if not exists tmp_top_100 (phone varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx(phone));
    create temporary table if not exists tmp_top_services (service varchar(40) not null, phone varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx(phone));
    create temporary table if not exists tmp_top_sources (source varchar(40) not null, phone varchar(12) not null, tx_usage bigint(18) default 0 not null, key phone_idx(phone));
    create temporary table if not exists tmp_services_summary (tx_date date not null, service varchar(40) not null, tx_usage bigint(18) default 0 not null, key phone_idx(tx_date,service));
    create temporary table if not exists tmp_sources_summary (tx_date date not null, source varchar(40) not null, tx_usage bigint(18) default 0 not null, key phone_idx(tx_date,source));
+   truncate table tmp_top_mins_stage;
    truncate table tmp_top_mins;
    truncate table tmp_top_100;
    truncate table tmp_top_services;
@@ -37,7 +39,7 @@ begin
       SET @nCtr  = @nCtr + 1; 
       if @nCtr < (@nTableCnt+1) then
          SET @vSql = '';
-         SET @vSql = concat('insert ignore into tmp_top_mins select phone, sum(b_usage) from test.udr_', @nCtr, ' ',
+         SET @vSql = concat('insert ignore into tmp_top_mins_stage select phone, sum(b_usage) from test.udr_', @nCtr, ' ',
                             'where tx_date = ''', p_trandate, ''' group by phone having sum(b_usage) > 0 ',
                             'order by 2 desc limit 2000');
          select @vSql;
@@ -46,6 +48,7 @@ begin
          DEALLOCATE PREPARE stmt;
       end if;
    end while;
+   insert into tmp_top_mins select phone, sum(tx_usage) from tmp_top_mins_stage group by phone;
    select 'First Pass....' Process;
 
    -- generate usage for all MINs on table tmp_top_mins per UDR table
@@ -71,6 +74,7 @@ begin
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) select p_trandate, phone, tx_usage from powerapp_nds_toptalker a where tx_date = date_sub(p_trandate, interval 1 day) and not exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and b.tx_date = p_trandate) order by tx_usage desc limit 100; 
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) select p_trandate, phone, tx_usage from powerapp_nds_toptalker a where tx_date = date_sub(p_trandate, interval 2 day) and not exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and b.tx_date = p_trandate) order by tx_usage desc limit 100; 
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) select p_trandate, phone, tx_usage from powerapp_nds_toptalker a where tx_date = date_sub(p_trandate, interval 3 day) and not exists (select 1 from powerapp_udr_toptalker b where a.phone=b.phone and b.tx_date = p_trandate) order by tx_usage desc limit 100; 
+   -- why these numbers are here?
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989659677', 0);
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989670051', 0);
    insert ignore into powerapp_udr_toptalker (tx_date, phone, tx_usage) values (p_trandate, '639989670081', 0);
@@ -181,7 +185,7 @@ begin
    insert ignore into powerapp_udr_toptalker_buys (tx_date, phone, plan, hits)
    select left(datein,10) tx_date, phone, plan, count(1) hits 
    from   powerapp_log a 
-   where  datein >= p_trandate and datein < date_add(p_trandate, interval 1 day)
+   where  datein >= date_sub(p_trandate, interval 1 day) and datein < date_add(p_trandate, interval 1 day)
    and    plan <> 'MYVOLUME' 
    and    exists (select 1 from powerapp_udr_toptalker b where b.tx_date = p_trandate and a.phone = b.phone)
    group by left(datein,10), phone, plan;
@@ -231,7 +235,7 @@ begin
          select concat(plan, '^', start_tm, '^', end_tm) into vPlan 
          from powerapp_log 
          where datein > date_sub(p_trandate, interval 3 day)
-         and   end_tm >= p_trandate
+         -- and   end_tm >= p_trandate
          and   start_tm <= p_trandate
          and   phone = vPhone
          limit 1; 

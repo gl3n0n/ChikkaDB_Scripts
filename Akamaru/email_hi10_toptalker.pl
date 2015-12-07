@@ -67,6 +67,7 @@ $format1p->set_size('9');
 $format1p->set_color('black');
 $format1p->set_align('left');
 $format1p->set_border(1);
+$format1p->set_text_wrap();
 
 $format1n = $workbook->add_format(); # Add a format
 $format1n->set_font('Calibri');
@@ -110,7 +111,10 @@ while (@mainRst = $sth_main->fetchrow()) {
    if (@mainRst[0] == 0) {
       $strSQLhi10n = "select phone, tx_usage, max(buys) buys, max(services) services from (
                      select a.phone, a.tx_usage, 
-                            group_concat(concat(b.plan, ':', b.hits) separator ' ^ ') buys, 
+                            IFNULL(group_concat(concat(b.plan, ':', b.hits) separator ' ^ '), 
+                                   (select group_concat(concat('(', e.plan, ':', e.hits, ')') separator ' ^ ')
+                                   from   powerapp_udr_toptalker_buys e where a.phone=e.phone and e.tx_date = date_sub('".$current_day."', interval 1 day))
+                                   ) buys, 
                             null services
                      from powerapp_nds_toptalker a 
                      left outer join powerapp_nds_toptalker_buys b on a.tx_date=b.tx_date and a.phone = b.phone 
@@ -130,7 +134,10 @@ while (@mainRst = $sth_main->fetchrow()) {
 
       $strSQLhi10u = "select phone, tx_usage, max(buys) buys, max(services) services, nds_usage from (
                      select a.phone, b.tx_usage, 
-                            group_concat(concat(c.plan, ':', c.hits) separator ' ^ ') buys, 
+                            IFNULL(group_concat(concat(c.plan, ':', c.hits) separator ' ^ '), 
+                                   (select group_concat(concat('(', e.plan, ':', e.hits, ')') separator ' ^ ')
+                                   from   powerapp_udr_toptalker_buys e where a.phone=e.phone and e.tx_date = date_sub('".$current_day."', interval 1 day))
+                                   ) buys, 
                             null services, a.tx_usage nds_usage
                      from powerapp_nds_toptalker a 
                      left outer join powerapp_udr_toptalker b on a.tx_date=b.tx_date and a.phone = b.phone 
@@ -182,7 +189,7 @@ while (@mainRst = $sth_main->fetchrow()) {
                      from powerapp_nds_toptalker a 
                      inner join powerapp_udr_toptalker b on a.tx_date=b.tx_date and a.phone = b.phone and b.w_buys = 0 and b.w_plan is null
                      left outer join powerapp_udr_toptalker_services c on a.tx_date=c.tx_date and a.phone = c.phone
-                     where a.tx_date = ''".$current_day."'
+                     where a.tx_date = '".$current_day."'
                      group by 1,2 
                      ) t1
                      group by phone, udr_usage, tx_usage
@@ -251,8 +258,8 @@ $workbook->close();
 $from = "powerapp_stats\@chikka.com";
 $to = "victor\@chikka.com";
 $cc = "dbadmins\@chikka.com,nbrinas\@chikka.com";
-#$to = "glenon\@chikka.com";
-#$cc = "glenon\@chikka.com";
+$to = "glenon\@chikka.com";
+$cc = "glenon\@chikka.com";
 $Subject = "PowerApp Top Talker, ".$current_day;
 
 # Part using which the attachment is sent to an email #
