@@ -232,13 +232,20 @@ begin
       set nCnt = 1;
       begin
          declare continue handler for sqlstate '02000' set nCnt = 0;
-         select concat(plan, '^', start_tm, '^', end_tm) into vPlan 
-         from powerapp_log 
+         select plan into vPlan from (
+         select concat(plan, '^', start_tm, '^', end_tm) plan, start_tm 
+         from powerapp_log USE INDEX(datein_idx)
          where datein > date_sub(p_trandate, interval 3 day)
-         -- and   end_tm >= p_trandate
-         and   start_tm <= p_trandate
+         and   datein < p_trandate
          and   phone = vPhone
-         limit 1; 
+         union
+         select concat(plan, '^', start_tm, '^', end_tm) plan, start_tm
+         from powerapp_sun.powerapp_log USE INDEX(datein_idx)
+         where datein > date_sub(p_trandate, interval 3 day)
+         and   datein < p_trandate
+         and   phone = vPhone
+         order by start_tm desc
+         limit 1) t limit 1; 
       end;
       if vPlan is not null then
          update powerapp_udr_toptalker
@@ -252,8 +259,8 @@ end;
 //
 delimiter ;
 
-call sp_generate_udr_toptalker('2015-03-15');
-call sp_process_udr_wo_buys('2015-03-15');
+call sp_generate_udr_toptalker('2016-01-21');
+call sp_process_udr_wo_buys('2016-01-22');
 
    update powerapp_udr_toptalker a 
    set w_buys=1 
